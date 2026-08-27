@@ -376,8 +376,11 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 
   <div class="sf" style="cursor:pointer" onclick="go('config','Perfil da Agência','Dados da mediadora · Seguro RC · Logotipo')">
     <div class="av" id="sb-avatar">MF</div>
-    <div><div class="avt" id="sb-nome">Marco Fernandes</div><div class="avs" id="sb-marca">Sunvila · AMI 25878</div></div>
-    <i class="ti ti-settings" style="margin-left:auto;font-size:16px;color:var(--color-text-secondary)"></i>
+    <div style="flex:1"><div class="avt" id="sb-nome">Marco Fernandes</div><div class="avs" id="sb-marca">Sunvila · AMI 25878</div></div>
+    <div style="display:flex;gap:4px;align-items:center">
+      <i class="ti ti-settings" style="font-size:16px;color:var(--text-secondary)" title="Perfil"></i>
+      <i class="ti ti-logout" onclick="event.stopPropagation();authLogout()" style="font-size:16px;color:var(--text-secondary);padding:4px;border-radius:6px;cursor:pointer" title="Sair" aria-label="Sair"></i>
+    </div>
   </div>
 </div>
 
