@@ -564,42 +564,8 @@ input[disabled]{opacity:.55;cursor:not-allowed}
       </div>
     </div>
 
-    <div class="sim-sec">
-      <div class="fst" style="margin-bottom:.7rem">Simulador de comissão</div>
-      <div class="pf-badge"><i class="ti ti-link"></i>Ligado à ficha · valores pré-carregados</div>
-      <div class="sim-grid">
-        <div class="sim-f"><label>Preço de venda (€)</label><input type="number" id="sp" oninput="sc()"></div>
-        <div class="sim-f"><label>Comissão (%)</label><input type="number" id="sc2" value="3" step="0.5" oninput="sc()"></div>
-        <div class="sim-f"><label>IVA</label><select id="siva" onchange="sc()"><option value="23">23%</option><option value="0">Isento</option></select></div>
-      </div>
-      <div class="sim-f" style="margin-bottom:.8rem">
-        <label>Regime de partilha</label>
-        <select id="spart" onchange="sc()">
-          <option value="100">Negócio próprio — 100% da comissão</option>
-          <option value="50">Co-mediação 50/50</option>
-          <option value="60">Partilha 60% (a meu favor)</option>
-          <option value="40">Partilha 40% (outra agência lidera)</option>
-        </select>
-      </div>
-      <div class="sim-res">
-        <div class="sim-res-g">
-          <div class="srb"><div class="srl">Preço de venda</div><div class="srv" id="r-preco">€ 285.000</div></div>
-          <div class="srb"><div class="srl">Comissão total (c/ IVA)</div><div class="srv" id="r-ctotal">€ 10.507</div></div>
-          <div class="srb"><div class="srl">Vendedor recebe líquido</div><div class="srv" id="r-vliq">€ 274.493</div></div>
-        </div>
-        <div class="sim-part">
-          <div class="sim-pt">Distribuição da comissão</div>
-          <div class="sim-pg">
-            <div class="spb"><div class="spl">A minha comissão</div><div class="spv" id="r-minha">€ 10.507</div></div>
-            <div class="spb"><div class="spl">Comissão outra agência</div><div class="spv" id="r-outra">€ 0</div></div>
-          </div>
-        </div>
-        <div style="margin-top:.6rem;padding-top:.6rem;border-top:0.5px solid var(--green-mid)">
-          <button type="button" class="btn" style="font-size:11.5px;width:100%;justify-content:center" onclick="abrirAcordoPartilha()"><i class="ti ti-arrows-split-2"></i>Gerar acordo de partilha de comissão</button>
-        <button type="button" class="btn" style="font-size:11.5px;width:100%;justify-content:center;margin-top:5px" onclick="gerarEmailPartilha()"><i class="ti ti-send"></i>Gerar email de proposta de partilha</button>
-        </div>
-        <div id="email-preview" style="display:none;margin-top:.7rem;background:var(--bg-primary);border:0.5px solid var(--green-mid);border-radius:var(--radius-md);padding:.8rem;font-size:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6"></div>
-      </div>
+    <div class="sim-sec" style="padding:.9rem 1.1rem">
+      <div class="nota inf" style="margin-bottom:0"><i class="ti ti-info-circle"></i>A comissão operacional é apurada quando existir CPCV e, quando aplicável, pelo acordo de partilha. A ficha do imóvel mantém apenas as condições contratadas no CMI.</div>
     </div>
   </div>
 </div>
@@ -1734,8 +1700,9 @@ function renderForm(id){
 <div class="fg">
   <div class="ff"><label>Comissão total acordada com o proprietário (%)</label><input id="pt-comissao-pct" type="number" value="3" step="0.5" oninput="calcPartilha()"></div>
   <div class="ff"><label>IVA</label><select id="pt-iva" onchange="calcPartilha()"><option value="23">23%</option><option value="0">Isento</option></select></div>
-  <div class="ff"><label>Quota da agência angariadora (%)</label><input id="pt-quota-ang" type="number" value="50" step="5" oninput="calcPartilha()"></div>
-  <div class="ff"><label>Quota da agência compradora (%)</label><input id="pt-quota-comp" type="number" value="50" step="5" oninput="calcPartilha()"></div>
+  <div class="ff full"><label>Tipo de partilha</label><select id="pt-partilha-tipo" onchange="v23TogglePartilhaTipo()"><option value="50-50">Standard — 50/50</option><option value="outra">Outra partilha</option></select></div>
+  <div class="ff" id="pt-quota-ang-wrap" style="display:none"><label>Quota da agência angariadora (%)</label><input id="pt-quota-ang" type="number" value="50" min="0" max="100" step="1" oninput="v23CustomPartilhaChanged('ang')"></div>
+  <div class="ff" id="pt-quota-comp-wrap" style="display:none"><label>Quota da agência compradora (%)</label><input id="pt-quota-comp" type="number" value="50" min="0" max="100" step="1" oninput="v23CustomPartilhaChanged('comp')"></div>
   <div class="ff"><label>Pagamento da quota compradora</label><select id="pt-momento"><option>No momento da escritura</option><option>No momento do CPCV</option><option>50% no CPCV e 50% na escritura</option></select></div>
   <div class="ff"><label>Data do acordo</label><input id="pt-data" type="date"></div>
 </div>
@@ -3533,7 +3500,7 @@ async function v2LoadImoveis(){
     const owners=(r.imovel_contactos||[]).filter(x=>x.papel==='proprietario').map(x=>x.contactos).filter(Boolean);
     const prop=owners.map(x=>x.nome).filter(Boolean).join(' / ')||'';
     const ref=r.referencia||('IM-'+r.id.slice(0,6));const n=parseInt((ref.match(/\d+/)||['0'])[0]);maxNum=Math.max(maxNum,n||0);
-    fichas[ref]={db_id:r.id,ref,title:`${ref} — ${r.morada||'Novo imóvel'}`,morada:r.morada||'',proprietario:prop,proprietarioSnap:v2OwnerSnap(owners),tipologia:r.tipologia||'T2',regime:r.regime||'Exclusivo',estado:r.estado||'ativo',ec:'bb',preco:Number(r.preco)||0,artigo:r.artigo||'',descpred:r.desc_predial||'',onus:r.onus||'',docs:v2DocsFromRow(r),info:[{l:'Proprietário',v:prop||'—'},{l:'Tipologia',v:r.tipologia||'—'},{l:'Regime',v:r.regime||'—'},{l:'Ónus',v:r.onus||'—'},{l:'Preço pedido',v:'€ '+Number(r.preco||0).toLocaleString('pt-PT')}],dataVenda:r.data_venda?v2DatePT(r.data_venda):'',comissaoRecebida:Number(r.comissao_recebida)||0};
+    fichas[ref]={db_id:r.id,ref,title:`${ref} — ${r.morada||'Novo imóvel'}`,morada:r.morada||'',proprietario:prop,proprietarioSnap:v2OwnerSnap(owners),tipologia:r.tipologia||'T2',regime:r.regime||'Exclusivo',estado:r.estado||'ativo',ec:'bb',preco:Number(r.preco)||0,comissao_pct:Number(r.comissao_pct)||0,iva_pct:Number(r.iva_pct??23),artigo:r.artigo||'',descpred:r.desc_predial||'',onus:r.onus||'',docs:v2DocsFromRow(r),info:[{l:'Proprietário',v:prop||'—'},{l:'Tipologia',v:r.tipologia||'—'},{l:'Regime',v:r.regime||'—'},{l:'Ónus',v:r.onus||'—'},{l:'Preço pedido',v:'€ '+Number(r.preco||0).toLocaleString('pt-PT')}],dataVenda:r.data_venda?v2DatePT(r.data_venda):'',comissaoRecebida:Number(r.comissao_recebida)||0};
   });
   fichaSeq=maxNum+1;
   await v2LoadFotos();
@@ -3589,9 +3556,7 @@ async function v2CreateImovelFromCMI(id,d){
   const ins=await supa.from('imoveis').insert(payload).select('*').single();if(ins.error)throw ins.error;const row=ins.data;
   const ownerRows=[];
   for(let i=0;i<owners.length;i++){const c=await v2FindOrCreateContact(owners[i]);if(c){ownerRows.push(c);await supa.from('imovel_contactos').upsert({agencia_id:currentAgenciaId,imovel_id:row.id,contacto_id:c.id,papel:'proprietario',principal:i===0},{onConflict:'imovel_id,contacto_id,papel'})}}
-  const ref=row.referencia;fichas[ref]={db_id:row.id,ref,title:`${ref} — ${row.morada}`,morada:row.morada,proprietario:ownerRows.map(x=>x.nome).join(' / '),proprietarioSnap:v2OwnerSnap(ownerRows),tipologia:row.tipologia,regime:row.regime,estado:row.estado,ec:'bb',preco:Number(row.preco)||0,artigo:row.artigo||'',descpred:row.desc_predial||'',onus:row.onus||'',docs:JSON.parse(JSON.stringify(V2_DEFAULT_DOCS)),info:[{l:'Proprietário',v:ownerRows.map(x=>x.nome).join(' / ')||'—'},{l:'Tipologia',v:row.tipologia},{l:'Regime',v:row.regime},{l:'Ónus',v:row.onus||'—'},{l:'Preço pedido',v:'€ '+Number(row.preco||0).toLocaleString('pt-PT')}]};
-  const pct=Number(row.comissao_pct)||3,base=Number(row.preco)||0,semIva=base*pct/100,iva=semIva*(Number(row.iva_pct)||0)/100;
-  await supa.from('comissoes').insert({agencia_id:currentAgenciaId,imovel_id:row.id,tipo:'receber',descricao:`Comissão prevista ${ref}`,percentagem:pct,base,valor_sem_iva:semIva,iva,valor_total:semIva+iva,estado:'prevista',created_by:user?.id||null});
+  const ref=row.referencia;fichas[ref]={db_id:row.id,ref,title:`${ref} — ${row.morada}`,morada:row.morada,proprietario:ownerRows.map(x=>x.nome).join(' / '),proprietarioSnap:v2OwnerSnap(ownerRows),tipologia:row.tipologia,regime:row.regime,estado:row.estado,ec:'bb',preco:Number(row.preco)||0,comissao_pct:Number(row.comissao_pct)||0,iva_pct:Number(row.iva_pct??23),artigo:row.artigo||'',descpred:row.desc_predial||'',onus:row.onus||'',docs:JSON.parse(JSON.stringify(V2_DEFAULT_DOCS)),info:[{l:'Proprietário',v:ownerRows.map(x=>x.nome).join(' / ')||'—'},{l:'Tipologia',v:row.tipologia},{l:'Regime',v:row.regime},{l:'Ónus',v:row.onus||'—'},{l:'Preço pedido',v:'€ '+Number(row.preco||0).toLocaleString('pt-PT')}]};
   return row;
 }
 function v2ImovelFromDocument(id,d){
@@ -3881,9 +3846,7 @@ v2CreateImovelFromCMI=async function(id,d){
   const ins=await supa.from('imoveis').insert(payload).select('*').single();if(ins.error)throw ins.error;const row=ins.data;
   const ownerRows=[];
   for(let i=0;i<owners.length;i++){const c=await v2FindOrCreateContact(owners[i]);if(c){ownerRows.push(c);await supa.from('imovel_contactos').upsert({agencia_id:currentAgenciaId,imovel_id:row.id,contacto_id:c.id,papel:'proprietario',principal:i===0},{onConflict:'imovel_id,contacto_id,papel'})}}
-  const ref=row.referencia;fichas[ref]={db_id:row.id,ref,title:`${ref} — ${row.morada}`,morada:row.morada,proprietario:ownerRows.map(x=>x.nome).join(' / '),proprietarioSnap:parte||v2OwnerSnap(ownerRows),tipologia:row.tipologia,regime:row.regime,estado:row.estado,ec:'bb',preco:Number(row.preco)||0,artigo:row.artigo||'',descpred:row.desc_predial||'',onus:row.onus||'',docs:JSON.parse(JSON.stringify(V2_DEFAULT_DOCS)),info:[{l:'Proprietário',v:ownerRows.map(x=>x.nome).join(' / ')||'—'},{l:'Tipologia',v:row.tipologia},{l:'Regime',v:row.regime},{l:'Ónus',v:row.onus||'—'},{l:'Preço pedido',v:'€ '+Number(row.preco||0).toLocaleString('pt-PT')}]};
-  const pct=Number(row.comissao_pct)||3,base=Number(row.preco)||0,semIva=base*pct/100,iva=semIva*(Number(row.iva_pct)||0)/100;
-  await supa.from('comissoes').insert({agencia_id:currentAgenciaId,imovel_id:row.id,tipo:'receber',descricao:`Comissão prevista ${ref}`,percentagem:pct,base,valor_sem_iva:semIva,iva,valor_total:semIva+iva,estado:'prevista',created_by:user?.id||null});
+  const ref=row.referencia;fichas[ref]={db_id:row.id,ref,title:`${ref} — ${row.morada}`,morada:row.morada,proprietario:ownerRows.map(x=>x.nome).join(' / '),proprietarioSnap:parte||v2OwnerSnap(ownerRows),tipologia:row.tipologia,regime:row.regime,estado:row.estado,ec:'bb',preco:Number(row.preco)||0,comissao_pct:Number(row.comissao_pct)||0,iva_pct:Number(row.iva_pct??23),artigo:row.artigo||'',descpred:row.desc_predial||'',onus:row.onus||'',docs:JSON.parse(JSON.stringify(V2_DEFAULT_DOCS)),info:[{l:'Proprietário',v:ownerRows.map(x=>x.nome).join(' / ')||'—'},{l:'Tipologia',v:row.tipologia},{l:'Regime',v:row.regime},{l:'Ónus',v:row.onus||'—'},{l:'Preço pedido',v:'€ '+Number(row.preco||0).toLocaleString('pt-PT')}]};
   return row;
 };
 
@@ -3898,7 +3861,7 @@ v2LoadImoveis=async function(){
     const prop=owners.map(x=>x.nome).filter(Boolean).join(' / ')||'';
     const ref=r.referencia||('IM-'+r.id.slice(0,6));const n=parseInt((ref.match(/\d+/)||['0'])[0]);maxNum=Math.max(maxNum,n||0);
     const snap=r.dados_json?.proprietario_snapshot||v2OwnerSnap(owners);
-    fichas[ref]={db_id:r.id,ref,title:`${ref} — ${r.morada||'Novo imóvel'}`,morada:r.morada||'',proprietario:prop,proprietarioSnap:snap,tipologia:r.tipologia||'T2',regime:r.regime||'Exclusivo',estado:r.estado||'ativo',ec:'bb',preco:Number(r.preco)||0,artigo:r.artigo||'',descpred:r.desc_predial||'',onus:r.onus||'',docs:v2DocsFromRow(r),info:[{l:'Proprietário',v:prop||'—'},{l:'Tipologia',v:r.tipologia||'—'},{l:'Regime',v:r.regime||'—'},{l:'Ónus',v:r.onus||'—'},{l:'Preço pedido',v:'€ '+Number(r.preco||0).toLocaleString('pt-PT')}],dataVenda:r.data_venda?v2DatePT(r.data_venda):'',comissaoRecebida:Number(r.comissao_recebida)||0};
+    fichas[ref]={db_id:r.id,ref,title:`${ref} — ${r.morada||'Novo imóvel'}`,morada:r.morada||'',proprietario:prop,proprietarioSnap:snap,tipologia:r.tipologia||'T2',regime:r.regime||'Exclusivo',estado:r.estado||'ativo',ec:'bb',preco:Number(r.preco)||0,comissao_pct:Number(r.comissao_pct)||0,iva_pct:Number(r.iva_pct??23),artigo:r.artigo||'',descpred:r.desc_predial||'',onus:r.onus||'',docs:v2DocsFromRow(r),info:[{l:'Proprietário',v:prop||'—'},{l:'Tipologia',v:r.tipologia||'—'},{l:'Regime',v:r.regime||'—'},{l:'Ónus',v:r.onus||'—'},{l:'Preço pedido',v:'€ '+Number(r.preco||0).toLocaleString('pt-PT')}],dataVenda:r.data_venda?v2DatePT(r.data_venda):'',comissaoRecebida:Number(r.comissao_recebida)||0};
   });
   fichaSeq=maxNum+1;await v2LoadFotos();renderDash();if(document.getElementById('pg-carteira')?.classList.contains('on'))renderCarteira();refreshPortfolioSelectors();
 };
@@ -4166,6 +4129,459 @@ async function v22SaveOwnerEditor(){
 
 /* Ao carregar a ficha, garantir estado de leitura. */
 setTimeout(()=>{if(fichaAberta)v22SetFichaEditing(false)},0);
+</script>
+
+<script>
+/* ============================================================
+   LYVCMI V2.3 — dossier documental + comissão no momento certo
+   ============================================================ */
+
+/* ---------- Partilha: standard 50/50 ou percentagem livre ---------- */
+function v23TogglePartilhaTipo(){
+  const tipo=document.getElementById('pt-partilha-tipo')?.value||'50-50';
+  const custom=tipo==='outra';
+  const a=document.getElementById('pt-quota-ang-wrap'),c=document.getElementById('pt-quota-comp-wrap');
+  if(a)a.style.display=custom?'flex':'none'; if(c)c.style.display=custom?'flex':'none';
+  if(!custom){const qa=document.getElementById('pt-quota-ang'),qc=document.getElementById('pt-quota-comp');if(qa)qa.value=50;if(qc)qc.value=50;}
+  calcPartilha();
+}
+function v23CustomPartilhaChanged(changed){
+  const qa=document.getElementById('pt-quota-ang'),qc=document.getElementById('pt-quota-comp');if(!qa||!qc)return;
+  let a=Math.max(0,Math.min(100,parseFloat(qa.value)||0)),c=Math.max(0,Math.min(100,parseFloat(qc.value)||0));
+  if(changed==='ang'){c=100-a;qc.value=String(c)}else{a=100-c;qa.value=String(a)}
+  calcPartilha();
+}
+const _v23RenderForm=renderForm;
+renderForm=function(id){_v23RenderForm(id);if(id==='partilha')setTimeout(v23TogglePartilhaTipo,0)};
+
+/* ---------- Comissão: só nasce quando o negócio está suficientemente definido ---------- */
+async function v23UpsertComissaoFromDocument(id,d,imovelId){
+  if(!imovelId||!currentAgenciaId||!['cpcv','partilha'].includes(id))return;
+  const f=Object.values(fichas).find(x=>x.db_id===imovelId);if(!f)return;
+  let base=0,quota=100,descricao='Comissão prevista';
+  if(id==='cpcv'){
+    base=parseFloat(d['cpcv-im-valor'])||Number(f.preco)||0;
+    // Se já existir partilha finalizada para este imóvel, respeitar a quota da agência angariadora.
+    const part=(bibDB||[]).find(x=>x.estado==='finalizado'&&x.tipo==='partilha'&&x.imovel_id===imovelId);
+    if(part?.dados){quota=parseFloat(part.dados['pt-quota-ang']||part.dados.qAng)||100;}
+    descricao=`Comissão prevista CPCV ${f.ref}`;
+  }else{
+    base=parseFloat(d.imPreco||d['pt-im-preco'])||Number(f.preco)||0;
+    quota=parseFloat(d.qAng||d['pt-quota-ang'])||50;
+    descricao=`Comissão prevista com partilha ${f.ref}`;
+  }
+  const pct=Number(f.comissao_pct)||Number(agencia.comissao)||3;
+  const ivaPct=Number(f.iva_pct??23);
+  const brutoSemIva=base*pct/100;
+  const nossaSemIva=brutoSemIva*quota/100;
+  const iva=nossaSemIva*ivaPct/100;
+  const payload={agencia_id:currentAgenciaId,imovel_id:imovelId,tipo:'receber',descricao,percentagem:pct,base,valor_sem_iva:nossaSemIva,iva,valor_total:nossaSemIva+iva,estado:'prevista'};
+  const existing=await supa.from('comissoes').select('id').eq('agencia_id',currentAgenciaId).eq('imovel_id',imovelId).eq('tipo','receber').in('estado',['prevista','faturada']).limit(1).maybeSingle();
+  if(existing.data?.id){const q=await supa.from('comissoes').update(payload).eq('id',existing.data.id);if(q.error)throw q.error}
+  else{const {data:{user}}=await supa.auth.getUser();const q=await supa.from('comissoes').insert({...payload,created_by:user?.id||null});if(q.error)throw q.error}
+  if(id==='cpcv'){await supa.from('imoveis').update({estado:'cpcv'}).eq('id',imovelId);if(f)f.estado='cpcv';}
+}
+
+/* Envolver a finalização: depois de o documento ficar arquivado, apurar comissão. */
+const _v23SaveContract=v2SaveContract;
+v2SaveContract=async function(id,estado){
+  const d=id==='partilha'?recolherDadosPartilha():recolherDados(id);
+  const fAntes=v2ImovelFromDocument(id,d);
+  const result=await _v23SaveContract(id,estado);
+  if(estado==='finalizado'&&['cpcv','partilha'].includes(id)){
+    try{
+      let f=fAntes;
+      if(!f){const morada=d['cpcv-im-morada']||d['pt-im-morada']||'';f=Object.values(fichas).find(x=>x.morada===morada)}
+      if(f?.db_id){await v23UpsertComissaoFromDocument(id,d,f.db_id);await v2LoadImoveis();await v23RenderDashFinance();}
+    }catch(e){console.error(e);mostrarToast('Documento finalizado, mas houve erro ao atualizar a comissão: '+(e.message||e),'err')}
+  }
+  return result;
+};
+guardarRascunho=async id=>v2SaveContract(id,'rascunho');
+finalizarContrato=async id=>v2SaveContract(id,'finalizado');
+
+/* Dashboard financeiro passa a usar comissões realmente apuradas, não o stock angariado. */
+async function v23RenderDashFinance(){
+  if(!currentAgenciaId)return;
+  const {data,error}=await supa.from('comissoes').select('*').eq('agencia_id',currentAgenciaId).eq('tipo','receber');if(error){console.error(error);return}
+  const rows=data||[];
+  const prevista=rows.filter(x=>['prevista','faturada'].includes(x.estado)).reduce((s,x)=>s+Number(x.valor_total||0),0);
+  const recebida=rows.filter(x=>x.estado==='recebida').reduce((s,x)=>s+Number(x.valor_total||0),0);
+  const cpcvIds=new Set(Object.values(fichas).filter(f=>f.estado==='cpcv').map(f=>f.db_id));
+  const cpcv=rows.filter(x=>cpcvIds.has(x.imovel_id)&&['prevista','faturada'].includes(x.estado)).reduce((s,x)=>s+Number(x.valor_total||0),0);
+  const e=id=>document.getElementById(id);
+  if(e('dash-comissoes'))e('dash-comissoes').textContent='€ '+Math.round(prevista).toLocaleString('pt-PT');
+  if(e('dash-cpcv'))e('dash-cpcv').textContent='€ '+Math.round(cpcv).toLocaleString('pt-PT');
+  if(e('dash-recebido'))e('dash-recebido').textContent='€ '+Math.round(recebida).toLocaleString('pt-PT');
+}
+const _v23RenderDash=renderDash;
+renderDash=function(){_v23RenderDash();v23RenderDashFinance()};
+
+/* ---------- Checklist documental do imóvel ---------- */
+const V23_DOC_STATUS={em_falta:['Em falta','br'],pendente:['Pendente','ba'],recebido:['Recebido','bg'],nao_aplicavel:['Não aplicável','bgr']};
+let v23DocUploadTipo='';
+function v23EnsureDocInput(){
+  if(document.getElementById('v23-doc-input'))return;
+  const inp=document.createElement('input');inp.type='file';inp.id='v23-doc-input';inp.accept='.pdf,.doc,.docx,image/jpeg,image/png,image/webp';inp.style.display='none';inp.onchange=v23DocInputChange;document.body.appendChild(inp);
+}
+async function v23LoadDocumentosImovel(ref){
+  const f=fichas[ref];if(!f?.db_id)return;
+  const {data,error}=await supa.from('imovel_documentos').select('*').eq('agencia_id',currentAgenciaId).eq('imovel_id',f.db_id).order('created_at');
+  if(error){console.error(error);mostrarToast('Não foi possível carregar o checklist documental: '+error.message,'err');return}
+  f.documentosDB=data||[];
+  v23RenderChecklist(ref);
+}
+function v23DocByTipo(f,tipo){return (f?.documentosDB||[]).find(x=>x.tipo===tipo)}
+function v23RenderChecklist(ref=fichaAberta){
+  const f=fichas[ref],box=document.getElementById('f-docs');if(!f||!box)return;
+  const tipos=V2_DEFAULT_DOCS.map(x=>x.n);
+  box.innerHTML=tipos.map(tipo=>{
+    const d=v23DocByTipo(f,tipo);const status=d?.status||'em_falta';const [lab,cls]=V23_DOC_STATUS[status]||V23_DOC_STATUS.em_falta;
+    const file=d?.storage_path?`<span style="font-size:10px;color:var(--text-tertiary);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v2Esc(d.nome_original||'')}">${v2Esc(d.nome_original||'ficheiro')}</span>`:'';
+    return `<div class="di" style="gap:10px"><div class="dn" style="flex:1;min-width:0"><i class="ti ${status==='recebido'?'ti-circle-check dok':status==='pendente'?'ti-clock dwrn':status==='nao_aplicavel'?'ti-minus dmiss':'ti-circle-x dmiss'}"></i><span>${v2Esc(tipo)}</span>${file}</div><select onchange="v23SetDocStatus('${v2Esc(tipo).replace(/'/g,"\'")}',this.value)" style="width:120px;padding:4px 6px;font-size:10.5px"><option value="em_falta" ${status==='em_falta'?'selected':''}>Em falta</option><option value="pendente" ${status==='pendente'?'selected':''}>Pendente</option><option value="recebido" ${status==='recebido'?'selected':''}>Recebido</option><option value="nao_aplicavel" ${status==='nao_aplicavel'?'selected':''}>Não aplicável</option></select><span class="bdg ${cls}" style="font-size:9px;min-width:70px;justify-content:center">${lab}</span>${d?.storage_path?`<button class="btn" style="padding:4px 7px;font-size:10.5px" onclick="v23VerDocumento('${v2Esc(tipo).replace(/'/g,"\'")}')"><i class="ti ti-eye"></i>Ver</button>`:''}<button class="btn" style="padding:4px 7px;font-size:10.5px" onclick="v23OpenDocUpload('${v2Esc(tipo).replace(/'/g,"\'")}')"><i class="ti ti-upload"></i>${d?.storage_path?'Substituir':'Carregar'}</button></div>`;
+  }).join('');
+}
+async function v23SetDocStatus(tipo,status){
+  const f=fichas[fichaAberta];if(!f?.db_id)return;
+  try{
+    const d=v23DocByTipo(f,tipo);
+    if(d){const q=await supa.from('imovel_documentos').update({status}).eq('id',d.id).select('*').single();if(q.error)throw q.error;Object.assign(d,q.data)}
+    else{const {data:{user}}=await supa.auth.getUser();const q=await supa.from('imovel_documentos').insert({agencia_id:currentAgenciaId,imovel_id:f.db_id,tipo,status,uploaded_by:user?.id||null}).select('*').single();if(q.error)throw q.error;f.documentosDB=f.documentosDB||[];f.documentosDB.push(q.data)}
+    const map={em_falta:'miss',pendente:'wrn',recebido:'ok',nao_aplicavel:'ok'};const fd=(f.docs||[]).find(x=>x.n===tipo);if(fd)fd.s=map[status]||'miss';
+    await supa.from('imoveis').update({docs_json:f.docs}).eq('id',f.db_id);v23RenderChecklist();
+  }catch(e){console.error(e);mostrarToast('Erro ao atualizar documento: '+(e.message||e),'err')}
+}
+function v23OpenDocUpload(tipo){v23EnsureDocInput();v23DocUploadTipo=tipo;const i=document.getElementById('v23-doc-input');i.value='';i.click()}
+async function v23DocInputChange(e){
+  const file=e.target.files?.[0],tipo=v23DocUploadTipo,f=fichas[fichaAberta];if(!file||!tipo||!f?.db_id)return;
+  try{
+    const old=v23DocByTipo(f,tipo);const ext=(file.name.split('.').pop()||'pdf').toLowerCase();const path=`${currentAgenciaId}/imoveis/${f.db_id}/documentos/${crypto.randomUUID()}.${ext}`;
+    const up=await supa.storage.from('lyvcmi-docs').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});if(up.error)throw up.error;
+    const {data:{user}}=await supa.auth.getUser();let row;
+    const payload={agencia_id:currentAgenciaId,imovel_id:f.db_id,tipo,status:'recebido',storage_path:path,nome_original:file.name,uploaded_by:user?.id||null,uploaded_at:new Date().toISOString()};
+    if(old){const q=await supa.from('imovel_documentos').update(payload).eq('id',old.id).select('*').single();if(q.error)throw q.error;row=q.data;if(old.storage_path&&old.storage_path!==path)await supa.storage.from('lyvcmi-docs').remove([old.storage_path])}
+    else{const q=await supa.from('imovel_documentos').insert(payload).select('*').single();if(q.error)throw q.error;row=q.data;f.documentosDB=f.documentosDB||[];f.documentosDB.push(row)}
+    if(old)Object.assign(old,row);const fd=(f.docs||[]).find(x=>x.n===tipo);if(fd)fd.s='ok';await supa.from('imoveis').update({docs_json:f.docs}).eq('id',f.db_id);
+    v23RenderChecklist();mostrarToast(`${tipo} arquivado no dossier do imóvel.`,'ok');
+  }catch(err){console.error(err);mostrarToast('Erro ao carregar documento: '+(err.message||err),'err')}
+}
+async function v23VerDocumento(tipo){
+  const f=fichas[fichaAberta],d=v23DocByTipo(f,tipo);if(!d?.storage_path)return;const url=await v2SignedUrl('lyvcmi-docs',d.storage_path,600);if(url)window.open(url,'_blank','noopener');else mostrarToast('Não foi possível abrir o documento.','err');
+}
+
+/* Abrir ficha carrega o dossier documental. */
+const _v23AbrirFicha=abrirFicha;
+abrirFicha=function(ref){_v23AbrirFicha(ref);v23LoadDocumentosImovel(ref)};
+const _v23SelIm=selIm;
+selIm=function(ref){
+  const f=fichas[ref];if(f){f.info=[{l:'Proprietário',v:f.proprietario||'—'},{l:'Tipologia',v:f.tipologia||'—'},{l:'Regime',v:f.regime||'—'},{l:'Ónus',v:f.onus||'—'},{l:'Preço pedido',v:'€ '+Number(f.preco||0).toLocaleString('pt-PT')}];}
+  _v23SelIm(ref);v23RenderChecklist(ref);
+};
+v23EnsureDocInput();
+</script>
+
+<script>
+/* ============================================================
+   LYVCMI V2.4 — NEGÓCIOS + PARTILHA/PROPOSTA EM PARALELO
+   - Carteira = apenas imóveis angariados pela nossa agência
+   - Negócio pode usar imóvel próprio ou imóvel de outra agência
+   - Partilha e proposta/reserva podem ser preparadas e enviadas juntas
+   - Estados independentes alimentam a próxima ação (CPCV)
+   ============================================================ */
+
+let v24Negocios=[];
+let v24Parceiros=[];
+
+const V24_ESTADOS={
+  partilha:{nao_aplicavel:'Não aplicável',rascunho:'Rascunho',pronta:'Pronta',enviada:'Enviada',aceite:'Aceite',recusada:'Recusada',contraproposta:'Contraproposta',substituida:'Substituída',liquidada:'Liquidada'},
+  proposta:{nao_iniciada:'Não iniciada',rascunho:'Rascunho',pronta:'Pronta',enviada:'Enviada',em_analise:'Em análise',aceite:'Aceite',recusada:'Recusada',contraproposta:'Contraproposta',expirada:'Expirada'},
+  reserva:{nao_iniciada:'Não iniciada',rascunho:'Rascunho',pronta:'Pronta',enviada:'Enviada',aceite:'Aceite',recusada:'Recusada',cancelada:'Cancelada',convertida_cpcv:'Convertida em CPCV'},
+  cpcv:{nao_iniciado:'Não iniciado',rascunho:'Rascunho',pronto:'Pronto',enviado:'Enviado',assinado:'Assinado',cancelado:'Cancelado',escritura_realizada:'Escritura realizada'}
+};
+function v24Lab(grupo,estado){return V24_ESTADOS[grupo]?.[estado]||estado||'—'}
+function v24Badge(estado){
+  if(['aceite','assinado','liquidada','escritura_realizada','concluido'].includes(estado))return'bg';
+  if(['recusada','cancelado','cancelada','perdido','expirada'].includes(estado))return'br';
+  if(['enviada','em_analise','contraproposta','aguarda_partilha'].includes(estado))return'ba';
+  return'bb';
+}
+
+/* ---------- Navegação / página Negócios ---------- */
+function v24EnsureNegociosUI(){
+  if(!document.getElementById('pg-negocios')){
+    const sc=document.querySelector('.sc');
+    if(sc){const pg=document.createElement('div');pg.className='pg';pg.id='pg-negocios';pg.innerHTML=`
+      <div class="carteira-tabs" style="margin-bottom:1rem">
+        <div style="font-size:13px;color:var(--text-secondary);flex:1">Processos de venda — imóveis próprios e negócios com imóveis de outras agências.</div>
+        <button class="btn" onclick="v24LoadNegocios()"><i class="ti ti-refresh"></i>Atualizar</button>
+      </div>
+      <div id="v24-negocios-lista"></div>`;sc.appendChild(pg)}
+  }
+  if(!document.getElementById('v24-nav-negocios')){
+    const carteira=[...document.querySelectorAll('.ni')].find(x=>x.textContent.includes('Carteira de imóveis'));
+    if(carteira){const n=document.createElement('div');n.className='ni';n.id='v24-nav-negocios';n.onclick=v24GoNegocios;n.innerHTML='<i class="ti ti-briefcase"></i><span>Negócios</span>';carteira.insertAdjacentElement('afterend',n)}
+  }
+  v24EnsureEstadoModal();v24EnsurePackageModal();
+}
+function v24GoNegocios(){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-negocios')?.classList.add('on');document.getElementById('v24-nav-negocios')?.classList.add('on');
+  const t=document.getElementById('tbt'),s=document.getElementById('tbs');if(t)t.textContent='Negócios';if(s)s.textContent='Propostas · partilhas · reservas · CPCV';v24LoadNegocios();
+}
+async function v24LoadNegocios(){
+  if(!currentAgenciaId)return;
+  const q=await supa.from('negocios').select('*').eq('agencia_id',currentAgenciaId).order('updated_at',{ascending:false});
+  if(q.error){console.error(q.error);mostrarToast('Erro ao carregar negócios: '+q.error.message,'err');return}
+  v24Negocios=q.data||[];v24RenderNegocios();
+}
+function v24NegocioImovel(n){
+  if(n.origem==='externo')return n.imovel_externo_morada||n.imovel_externo_ref||'Imóvel externo';
+  const f=Object.values(fichas).find(x=>x.db_id===n.imovel_id);return f?`${f.ref} · ${f.morada}`:'Imóvel da carteira';
+}
+function v24NegocioNext(n){
+  const shareOk=!n.tem_partilha||n.partilha_estado==='aceite';
+  const accepted=n.proposta_estado==='aceite'||n.reserva_estado==='aceite';
+  if(accepted&&shareOk&&['nao_iniciado','rascunho'].includes(n.cpcv_estado||'nao_iniciado'))return 'Criar CPCV';
+  if(n.tem_partilha&&n.partilha_estado==='pronta'&&(n.proposta_estado==='pronta'||n.reserva_estado==='pronta'))return 'Enviar pacote';
+  if(n.tem_partilha&&n.partilha_estado==='enviada'&&n.proposta_estado==='aceite')return 'Aguardar partilha';
+  if(n.proposta_estado==='enviada'||n.reserva_estado==='enviada')return 'Aguardar resposta';
+  if(n.cpcv_estado==='pronto')return 'Enviar CPCV';
+  if(n.cpcv_estado==='enviado')return 'Aguardar assinatura';
+  if(n.cpcv_estado==='assinado')return 'Agendar escritura';
+  return 'Acompanhar negócio';
+}
+function v24RenderNegocios(){
+  const box=document.getElementById('v24-negocios-lista');if(!box)return;
+  if(!v24Negocios.length){box.innerHTML='<div class="card" style="padding:2rem;text-align:center;color:var(--text-tertiary)"><i class="ti ti-briefcase" style="font-size:28px;display:block;margin-bottom:8px"></i>Ainda não existem negócios. São criados ao guardar uma Proposta, Reserva ou Partilha.</div>';return}
+  box.innerHTML=`<div class="card"><table style="table-layout:auto"><thead><tr><th>Negócio</th><th>Imóvel</th><th>Origem</th><th>Parceiro</th><th>Partilha</th><th>Proposta / Reserva</th><th>Próxima ação</th><th></th></tr></thead><tbody>${v24Negocios.map(n=>{
+    const comercial=n.proposta_estado!=='nao_iniciada'?`Proposta: ${v24Lab('proposta',n.proposta_estado)}`:`Reserva: ${v24Lab('reserva',n.reserva_estado)}`;
+    const acao=v24NegocioNext(n);const canCpcv=acao==='Criar CPCV';const canEmail=acao==='Enviar pacote';
+    return `<tr><td><strong>${v2Esc(n.referencia||'NEG')}</strong></td><td>${v2Esc(v24NegocioImovel(n))}</td><td><span class="bdg ${n.origem==='externo'?'ba':'bg'}">${n.origem==='externo'?'Externo':'Carteira'}</span></td><td>${v2Esc(n.parceiro_nome||'—')}</td><td><span class="bdg ${v24Badge(n.partilha_estado)}">${v2Esc(v24Lab('partilha',n.partilha_estado))}</span></td><td>${v2Esc(comercial)}</td><td><strong>${v2Esc(acao)}</strong></td><td style="white-space:nowrap"><button class="btn" onclick="v24OpenEstadoNegocio('${n.id}')"><i class="ti ti-adjustments"></i>Estados</button>${canEmail?` <button class="btn p" onclick="v24OpenPackageEmail('${n.id}')"><i class="ti ti-send"></i>Enviar</button>`:''}${canCpcv?` <button class="btn p" onclick="v24OpenCpcvNegocio('${n.id}')"><i class="ti ti-file-certificate"></i>CPCV</button>`:''}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+/* ---------- Parceiros AMI ---------- */
+async function v24LoadParceiros(){
+  if(!currentAgenciaId)return;
+  const q=await supa.from('agencias_parceiras').select('*').eq('agencia_id',currentAgenciaId).eq('ativo',true).order('nome');
+  if(q.error){console.error(q.error);return}v24Parceiros=q.data||[];v24RefreshPartnerSelects();
+}
+function v24RefreshPartnerSelects(){
+  document.querySelectorAll('select[data-v24-partner-select="1"]').forEach(sel=>{
+    const cur=sel.value;sel.innerHTML='<option value="">— Novo / preencher manualmente —</option>'+v24Parceiros.map(p=>`<option value="${p.id}">${v2Esc(p.nome)}${p.ami?' · AMI '+v2Esc(p.ami):''}</option>`).join('');if(v24Parceiros.some(p=>p.id===cur))sel.value=cur;
+  });
+}
+function v24ParceiroFields(prefix){return `
+  <div class="fg">
+    <div class="ff full"><label>Parceiro já utilizado (opcional)</label><select id="${prefix}-parceiro-id" data-v24-partner-select="1" onchange="v24ParceiroSelecionado('${prefix}',this.value)"><option value="">— Novo / preencher manualmente —</option></select></div>
+    <div class="ff"><label>Agência parceira</label><input id="${prefix}-parceiro-nome" placeholder="Nome da mediadora"></div>
+    <div class="ff"><label>Licença AMI</label><input id="${prefix}-parceiro-ami" placeholder="AMI"></div>
+    <div class="ff"><label>NIF</label><input id="${prefix}-parceiro-nif" placeholder="NIF"></div>
+    <div class="ff"><label>Consultor / representante</label><input id="${prefix}-parceiro-rep" placeholder="Nome"></div>
+    <div class="ff"><label>Email</label><input id="${prefix}-parceiro-email" type="email" placeholder="agencia@exemplo.pt"></div>
+    <div class="ff"><label>Telefone</label><input id="${prefix}-parceiro-telefone" placeholder="+351 ..."></div>
+  </div>`}
+function v24ParceiroSelecionado(prefix,id){
+  const p=v24Parceiros.find(x=>x.id===id);if(!p)return;const set=(s,v)=>{const e=document.getElementById(`${prefix}-parceiro-${s}`);if(e)e.value=v||''};set('nome',p.nome);set('ami',p.ami);set('nif',p.nif);set('rep',p.representante);set('email',p.email);set('telefone',p.telefone);
+}
+async function v24SaveParceiro(ctx){
+  if(!ctx.temParceiro||!ctx.parceiro.nome?.trim())return null;
+  const {data:{user}}=await supa.auth.getUser();const payload={agencia_id:currentAgenciaId,nome:ctx.parceiro.nome.trim(),nif:ctx.parceiro.nif||null,ami:ctx.parceiro.ami||null,representante:ctx.parceiro.rep||null,email:ctx.parceiro.email||null,telefone:ctx.parceiro.telefone||null,created_by:user?.id||null};
+  const q=await supa.from('agencias_parceiras').upsert(payload,{onConflict:'agencia_id,nome'}).select('*').single();if(q.error)throw q.error;if(!v24Parceiros.some(x=>x.id===q.data.id))v24Parceiros.push(q.data);return q.data;
+}
+
+/* ---------- Contexto de Proposta / Reserva ---------- */
+function v24ContextBlock(doc){
+  const titulo=doc==='proposta'?'Contexto da proposta':'Contexto da reserva';
+  return `<div class="form-card"><div class="fc-title"><i class="ti ti-route"></i>${titulo}</div>
+    <input type="hidden" id="${doc}-negocio-id"><input type="hidden" id="${doc}-origem" value="proprio"><input type="hidden" id="${doc}-tem-parceiro" value="0">
+    <label>Origem do imóvel</label><div class="tog-row"><div class="tog on" id="${doc}-origem-proprio" onclick="v24SetOrigem('${doc}','proprio')"><i class="ti ti-building-estate"></i>Imóvel da nossa carteira</div><div class="tog" id="${doc}-origem-externo" onclick="v24SetOrigem('${doc}','externo')"><i class="ti ti-building-store"></i>Imóvel de outra agência</div></div>
+    <div id="${doc}-proprio-wrap"><label style="display:block;margin-bottom:5px">Imóvel da carteira</label><select id="${doc}-im-portfolio-sel" onchange="aplicarImovelPortfolio('${doc}-im');this.blur()"><option value="">— Escolher imóvel —</option></select></div>
+    <div id="${doc}-externo-note" class="nota inf" style="display:none;margin-top:.7rem"><i class="ti ti-info-circle"></i>Este imóvel não entra na nossa Carteira. Será guardado apenas no Negócio, porque pertence à agência parceira.</div>
+    <div id="${doc}-parceria-choice" style="margin-top:.9rem"><label>Existe agência parceira neste negócio?</label><div class="sub-tog-row"><div class="sub-tog on" id="${doc}-sem-parceiro" onclick="v24SetTemParceiro('${doc}',false)">Não — negócio direto</div><div class="sub-tog" id="${doc}-com-parceiro" onclick="v24SetTemParceiro('${doc}',true)">Sim — co-mediação</div></div></div>
+    <div id="${doc}-parceiro-wrap" style="display:none;margin-top:.9rem;padding-top:.9rem;border-top:.5px solid var(--border-tertiary)"><div class="parte-section-label">Agência parceira</div>${v24ParceiroFields(doc)}
+      <div class="fg" style="margin-top:.8rem"><div class="ff"><label>Partilha</label><select id="${doc}-partilha-tipo" onchange="v24PartilhaTipoDoc('${doc}')"><option value="50-50">Standard — 50/50</option><option value="outra">Outra partilha</option></select></div><div class="ff" id="${doc}-partilha-nossa-wrap" style="display:none"><label>Nossa quota (%)</label><input id="${doc}-partilha-nossa" type="number" value="50" min="0" max="100" oninput="v24PartilhaCustom('${doc}','nossa')"></div><div class="ff" id="${doc}-partilha-parceira-wrap" style="display:none"><label>Quota parceira (%)</label><input id="${doc}-partilha-parceira" type="number" value="50" min="0" max="100" oninput="v24PartilhaCustom('${doc}','parceira')"></div></div>
+      <div class="nota inf" style="margin-top:.7rem;margin-bottom:0"><i class="ti ti-send"></i>A partilha e a ${doc==='proposta'?'proposta':'reserva'} podem ser finalizadas e enviadas à agência parceira no mesmo email.</div>
+    </div>
+  </div>`;
+}
+function v24ActionRow(id){return `<div class="btn-row"><button class="btn" onclick="guardarRascunho('${id}')"><i class="ti ti-device-floppy"></i>Guardar rascunho</button><button class="btn" onclick="preVisualizar('${id}')"><i class="ti ti-eye"></i>Pré-visualizar</button><button class="btn p" onclick="finalizarContrato('${id}')"><i class="ti ti-file-check"></i>Finalizar</button><button class="btn p" id="${id}-pacote-btn" style="display:none" onclick="v24FinalizarPacote('${id}')"><i class="ti ti-package-export"></i>Finalizar + preparar envio à agência</button></div>`}
+function v24SetOrigem(doc,origem){
+  document.getElementById(`${doc}-origem`).value=origem;document.getElementById(`${doc}-origem-proprio`)?.classList.toggle('on',origem==='proprio');document.getElementById(`${doc}-origem-externo`)?.classList.toggle('on',origem==='externo');
+  const pw=document.getElementById(`${doc}-proprio-wrap`),note=document.getElementById(`${doc}-externo-note`),choice=document.getElementById(`${doc}-parceria-choice`);if(pw)pw.style.display=origem==='proprio'?'block':'none';if(note)note.style.display=origem==='externo'?'flex':'none';if(choice)choice.style.display=origem==='proprio'?'block':'none';
+  const ownerPrefix=doc==='proposta'?'proposta-vend':'reserva-prop';const ownerCard=document.getElementById(ownerPrefix+'-tipo-singular')?.closest('.form-card');if(ownerCard)ownerCard.style.display=origem==='externo'?'none':'block';
+  if(origem==='externo'){
+    const sel=document.getElementById(`${doc}-im-portfolio-sel`);if(sel){sel.value='';v22ClearDocumentMaster(`${doc}-im`)}v24SetTemParceiro(doc,true);
+  }else v24SetTemParceiro(doc,document.getElementById(`${doc}-tem-parceiro`)?.value==='1');
+}
+function v24SetTemParceiro(doc,yes){
+  if(document.getElementById(`${doc}-origem`)?.value==='externo')yes=true;document.getElementById(`${doc}-tem-parceiro`).value=yes?'1':'0';document.getElementById(`${doc}-sem-parceiro`)?.classList.toggle('on',!yes);document.getElementById(`${doc}-com-parceiro`)?.classList.toggle('on',yes);const w=document.getElementById(`${doc}-parceiro-wrap`),b=document.getElementById(`${doc}-pacote-btn`);if(w)w.style.display=yes?'block':'none';if(b)b.style.display=yes?'inline-flex':'none';
+}
+function v24PartilhaTipoDoc(doc){const custom=document.getElementById(`${doc}-partilha-tipo`)?.value==='outra';document.getElementById(`${doc}-partilha-nossa-wrap`).style.display=custom?'flex':'none';document.getElementById(`${doc}-partilha-parceira-wrap`).style.display=custom?'flex':'none';if(!custom){document.getElementById(`${doc}-partilha-nossa`).value=50;document.getElementById(`${doc}-partilha-parceira`).value=50}}
+function v24PartilhaCustom(doc,changed){let n=document.getElementById(`${doc}-partilha-nossa`),p=document.getElementById(`${doc}-partilha-parceira`);if(!n||!p)return;if(changed==='nossa')p.value=Math.max(0,100-(parseFloat(n.value)||0));else n.value=Math.max(0,100-(parseFloat(p.value)||0))}
+function v24PopulatePortfolioForDoc(doc){
+  const sel=document.getElementById(`${doc}-im-portfolio-sel`);if(!sel)return;const cur=sel.value;const at=fichasAtivos();sel.innerHTML='<option value="">— Escolher imóvel —</option>'+at.map(f=>`<option value="${f.ref}">${v2Esc(f.ref)} · ${v2Esc(f.morada)} · €${Number(f.preco).toLocaleString('pt-PT')}</option>`).join('');if(at.some(f=>f.ref===cur))sel.value=cur;
+}
+
+/* ---------- Formulários V2.4 ---------- */
+const _v24RenderFormBase=renderForm;
+renderForm=function(id){
+  if(!['proposta','reserva','partilha'].includes(id)){_v24RenderFormBase(id);return}
+  const wrap=document.getElementById('form-'+id);if(!wrap||wrap.dataset.v24done==='1')return;wrap.dataset.done='1';wrap.dataset.v24done='1';
+  if(id==='proposta'){
+    wrap.innerHTML=nota_lei+v24ContextBlock('proposta')+
+      `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="${v2Esc(agencia.nome||'')}"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="${v2Esc(agencia.ami||'')}"></div><div class="ff"><label>Consultor responsável</label><input id="proposta-consultor" value="${v2Esc(agenteAtual.nome||'')}"></div></div></div>`+
+      `<div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Dados do imóvel</div><div class="ff" style="margin-bottom:10px"><label>Referência externa (se aplicável)</label><input id="proposta-ext-ref" placeholder="Referência da agência parceira"></div>${imovelCamposHtml('proposta-im')}</div>`+
+      outorgantesBlock('proposta-vend','Vendedor(es) / proprietário(s) — automático no imóvel da carteira','ti-user')+
+      outorgantesBlock('proposta-comp','Proponente(s) / comprador(es)','ti-user-check')+
+      `<div class="form-card"><div class="fc-title"><i class="ti ti-coin"></i>Proposta financeira</div><div class="fg"><div class="ff"><label>Tipo</label><select id="proposta-tipo"><option>Compra</option><option>Arrendamento c/ opção de compra</option></select></div><div class="ff"><label>Preço proposto (€)</label><input id="proposta-preco" type="number"></div><div class="ff"><label>Sinal / entrada (€)</label><input id="proposta-sinal" type="number"></div><div class="ff"><label>Forma de pagamento</label><select id="proposta-pagamento"><option>Crédito bancário</option><option>Capitais próprios</option><option>Misto</option></select></div><div class="ff"><label>Sujeito a aprovação bancária</label><select id="proposta-bancaria"><option>Sim</option><option>Não</option></select></div><div class="ff"><label>Validade da proposta (dias)</label><input id="proposta-validade" type="number" value="5"></div><div class="ff full"><label>Condições especiais</label><input id="proposta-condicoes"></div></div></div>`+v24ActionRow('proposta');
+    ogInitAll(['proposta-vend','proposta-comp']);v24PopulatePortfolioForDoc('proposta');v24SetOrigem('proposta','proprio');
+  }else if(id==='reserva'){
+    wrap.innerHTML=nota_lei+`<div class="nota wrn"><i class="ti ti-info-circle"></i>A reserva é pré-contratual. O sinal só é não reembolsável se expressamente previsto. Para vinculação plena, use o CPCV.</div>`+v24ContextBlock('reserva')+
+      `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="${v2Esc(agencia.nome||'')}"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="${v2Esc(agencia.ami||'')}"></div><div class="ff"><label>Consultor</label><input class="pf" disabled value="${v2Esc(agenteAtual.nome||'')}"></div></div></div>`+
+      `<div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Dados do imóvel</div><div class="ff" style="margin-bottom:10px"><label>Referência externa (se aplicável)</label><input id="reserva-ext-ref" placeholder="Referência da agência parceira"></div>${imovelCamposHtml('reserva-im')}</div>`+
+      outorgantesBlock('reserva-prop','Proprietário(s) — automático no imóvel da carteira','ti-user')+outorgantesBlock('reserva-res','Reservante(s) / comprador(es)','ti-user-check')+
+      `<div class="form-card"><div class="fc-title"><i class="ti ti-coin"></i>Condições da reserva</div><div class="fg"><div class="ff"><label>Valor da reserva / sinal (€)</label><input id="reserva-sinal" type="number"></div><div class="ff"><label>Prazo de reserva (dias)</label><input id="reserva-prazo" type="number" value="30"></div><div class="ff"><label>Data de assinatura</label><input id="reserva-data" type="date"></div><div class="ff"><label>Forma de pagamento remanescente</label><select id="reserva-pagamento"><option>Crédito bancário</option><option>Capitais próprios</option><option>Misto</option></select></div><div class="ff"><label>Condições especiais</label><select id="reserva-condicoes"><option>Sujeito a aprovação bancária</option><option>Sujeito a avaliação</option><option>Sem condições</option></select></div></div></div>`+v24ActionRow('reserva');
+    ogInitAll(['reserva-prop','reserva-res']);v24PopulatePortfolioForDoc('reserva');v24SetOrigem('reserva','proprio');
+  }else{
+    wrap.innerHTML=`<div class="nota inf"><i class="ti ti-info-circle"></i>A partilha identifica a agência angariadora (quem tem o CMI) e a agência compradora (quem apresenta o cliente). O standard é 50/50; qualquer outra quota é introduzida manualmente.</div>
+      <div class="form-card"><div class="fc-title"><i class="ti ti-route"></i>Posição da nossa agência</div><input type="hidden" id="pt-negocio-id"><input type="hidden" id="pt-origem" value="proprio"><div class="tog-row"><div class="tog on" id="pt-pos-ang" onclick="v24PartilhaPosicao('angariadora')"><i class="ti ti-home-hand"></i>Somos a agência angariadora</div><div class="tog" id="pt-pos-comp" onclick="v24PartilhaPosicao('compradora')"><i class="ti ti-user-share"></i>Somos a agência compradora</div></div><div id="pt-carteira-wrap"><label>Imóvel da nossa carteira</label><select id="pt-im-sel" onchange="v24PartilhaEscolherImovel()"><option value="">— Escolher imóvel —</option></select></div><div id="pt-externo-note" class="nota inf" style="display:none;margin-top:.6rem"><i class="ti ti-info-circle"></i>Como agência compradora, o imóvel pertence à parceira e fica apenas no Negócio — não entra na nossa Carteira.</div></div>
+      <div class="form-card"><div class="fc-title"><i class="ti ti-building-estate"></i>Agência parceira</div>${v24ParceiroFields('pt')}</div>
+      <div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Imóvel objeto da partilha</div><div class="fg"><div class="ff full"><label>Referência da agência angariadora</label><input id="pt-im-ref"></div><div class="ff full"><label>Morada</label><input id="pt-im-morada"></div><div class="ff"><label>Preço (€)</label><input id="pt-im-preco" type="number"></div><div class="ff"><label>Tipologia</label><input id="pt-im-tipologia"></div></div></div>
+      <div class="form-card"><div class="fc-title"><i class="ti ti-arrows-split-2"></i>Condições da partilha</div><div class="fg"><div class="ff"><label>Tipo de partilha</label><select id="pt-partilha-tipo" onchange="v23TogglePartilhaTipo()"><option value="50-50">Standard — 50/50</option><option value="outra">Outra partilha</option></select></div><div class="ff"><label>Comissão total (%) — opcional</label><input id="pt-comissao-pct" type="number" step="0.5" placeholder="Se conhecida"></div><div class="ff" id="pt-quota-ang-wrap" style="display:none"><label>Quota da agência angariadora (%)</label><input id="pt-quota-ang" type="number" value="50" oninput="v23CustomPartilhaChanged('ang')"></div><div class="ff" id="pt-quota-comp-wrap" style="display:none"><label>Quota da agência compradora (%)</label><input id="pt-quota-comp" type="number" value="50" oninput="v23CustomPartilhaChanged('comp')"></div><div class="ff"><label>IVA</label><select id="pt-iva"><option value="23">23%</option><option value="0">Isento</option></select></div><div class="ff"><label>Data do acordo</label><input id="pt-data" type="date"></div></div></div>
+      <div class="form-card"><div class="fc-title"><i class="ti ti-user"></i>Comprador apresentado pela agência compradora</div><div class="fg"><div class="ff"><label>Nome</label><input id="pt-comprador"></div><div class="ff"><label>NIF</label><input id="pt-comprador-nif"></div></div></div>${v24ActionRow('partilha')}`;
+    v24PartilhaPosicao('angariadora');v24PopulatePartilhaPortfolio();
+  }
+  v24RefreshPartnerSelects();
+};
+function v24PopulatePartilhaPortfolio(){const sel=document.getElementById('pt-im-sel');if(!sel)return;sel.innerHTML='<option value="">— Escolher imóvel —</option>'+fichasAtivos().map(f=>`<option value="${f.ref}">${v2Esc(f.ref)} · ${v2Esc(f.morada)} · €${Number(f.preco).toLocaleString('pt-PT')}</option>`).join('')}
+function v24PartilhaPosicao(pos){
+  const own=pos==='angariadora';document.getElementById('pt-origem').value=own?'proprio':'externo';document.getElementById('pt-pos-ang')?.classList.toggle('on',own);document.getElementById('pt-pos-comp')?.classList.toggle('on',!own);document.getElementById('pt-carteira-wrap').style.display=own?'block':'none';document.getElementById('pt-externo-note').style.display=own?'none':'flex';if(!own){const s=document.getElementById('pt-im-sel');if(s)s.value=''}
+}
+function v24PartilhaEscolherImovel(){const ref=document.getElementById('pt-im-sel')?.value,f=fichas[ref];if(!f)return;document.getElementById('pt-im-ref').value=f.ref;document.getElementById('pt-im-morada').value=f.morada;document.getElementById('pt-im-preco').value=f.preco||0;document.getElementById('pt-im-tipologia').value=f.tipologia||'';if(f.comissao_pct)document.getElementById('pt-comissao-pct').value=f.comissao_pct}
+
+/* ---------- Contexto / persistência do Negócio ---------- */
+function v24ContextFromDoc(doc,d){
+  const origem=d[`${doc}-origem`]||'proprio',temParceiro=origem==='externo'||d[`${doc}-tem-parceiro`]==='1';let nossa=50,parceira=50;if(d[`${doc}-partilha-tipo`]==='outra'){nossa=parseFloat(d[`${doc}-partilha-nossa`])||0;parceira=parseFloat(d[`${doc}-partilha-parceira`])||Math.max(0,100-nossa)}
+  return {origem,temParceiro,partilhaTipo:d[`${doc}-partilha-tipo`]||'50-50',nossaPct:temParceiro?nossa:null,parceiraPct:temParceiro?parceira:null,nossaPosicao:origem==='externo'?'compradora':'angariadora',parceiro:{id:d[`${doc}-parceiro-id`]||null,nome:d[`${doc}-parceiro-nome`]||'',ami:d[`${doc}-parceiro-ami`]||'',nif:d[`${doc}-parceiro-nif`]||'',rep:d[`${doc}-parceiro-rep`]||'',email:d[`${doc}-parceiro-email`]||'',telefone:d[`${doc}-parceiro-telefone`]||''}};
+}
+function v24ContextPartilha(d){
+  const pos=d.nossaPosicao||'angariadora',own=pos==='angariadora';let qa=parseFloat(d.qAng)||50,qc=parseFloat(d.qComp)||50;return{origem:own?'proprio':'externo',temParceiro:true,partilhaTipo:d.partilhaTipo||'50-50',nossaPosicao:pos,nossaPct:own?qa:qc,parceiraPct:own?qc:qa,parceiro:{id:d.parceiroId||null,nome:d.parceiroNome||'',ami:d.parceiroAmi||'',nif:d.parceiroNif||'',rep:d.parceiroRep||'',email:d.parceiroEmail||'',telefone:d.parceiroTelefone||''}};
+}
+async function v24EnsureNegocio(doc,d){
+  let ctx,imovelId=null,ref=null,morada='',tipologia='',preco=0,artigo='',descpred='',onus='',buyer=null,hiddenId='';
+  if(doc==='partilha'){
+    ctx=v24ContextPartilha(d);hiddenId=d.negocioId||document.getElementById('pt-negocio-id')?.value||'';ref=d.imRef||'';morada=d.imMorada||'';tipologia=d.imTipologia||'';preco=Number(d.imPreco)||0;if(ctx.origem==='proprio'){const f=fichas[d.imovelRef||document.getElementById('pt-im-sel')?.value];if(f){imovelId=f.db_id;ref=f.ref;morada=f.morada;tipologia=f.tipologia;preco=f.preco}}
+    if(d.comprador){buyer=await v2FindOrCreateContact({tipo:'singular',nome:d.comprador,nif:d.compradorNif||''})}
+  }else{
+    ctx=v24ContextFromDoc(doc,d);hiddenId=d[`${doc}-negocio-id`]||document.getElementById(`${doc}-negocio-id`)?.value||'';const propPrefix=`${doc}-im`;ref=d[`${doc}-ext-ref`]||'';morada=d[`${propPrefix}-morada`]||'';tipologia=d[`${propPrefix}-tipologia`]||'';preco=Number(d[`${propPrefix}-valor`])||0;artigo=d[`${propPrefix}-artigo`]||'';descpred=d[`${propPrefix}-descpred`]||'';onus=d[`${propPrefix}-onus`]||'';
+    if(ctx.origem==='proprio'){const fr=d[`${doc}-im-portfolio-sel`]||document.getElementById(`${doc}-im-portfolio-sel`)?.value||'',f=fichas[fr];if(!f)throw new Error('Escolhe um imóvel da Carteira.');imovelId=f.db_id;ref=f.ref;morada=f.morada;tipologia=f.tipologia;preco=f.preco;artigo=f.artigo||'';descpred=f.descpred||'';onus=f.onus||''}
+    const bo=(d._outorgantes_comp||[]).find(x=>x.nome?.trim());if(bo)buyer=await v2FindOrCreateContact(bo);
+  }
+  if(ctx.temParceiro&&!ctx.parceiro.nome.trim())throw new Error('Indica a agência parceira.');const parceiro=ctx.temParceiro?await v24SaveParceiro(ctx):null;const {data:{user}}=await supa.auth.getUser();
+  const payload={agencia_id:currentAgenciaId,imovel_id:imovelId,comprador_id:buyer?.id||null,agente_responsavel_id:agenteAtual.id||null,origem:ctx.origem,parceiro_id:parceiro?.id||ctx.parceiro.id||null,nossa_posicao:ctx.temParceiro?ctx.nossaPosicao:null,tem_partilha:ctx.temParceiro,partilha_tipo:ctx.partilhaTipo,partilha_pct_nossa:ctx.nossaPct,partilha_pct_parceira:ctx.parceiraPct,partilha_estado:ctx.temParceiro?'rascunho':'nao_aplicavel',parceiro_nome:ctx.parceiro.nome||null,parceiro_nif:ctx.parceiro.nif||null,parceiro_ami:ctx.parceiro.ami||null,parceiro_representante:ctx.parceiro.rep||null,parceiro_email:ctx.parceiro.email||null,parceiro_telefone:ctx.parceiro.telefone||null,imovel_externo_ref:ctx.origem==='externo'?ref:null,imovel_externo_morada:ctx.origem==='externo'?morada:null,imovel_externo_tipologia:ctx.origem==='externo'?tipologia:null,imovel_externo_preco:ctx.origem==='externo'?preco:null,imovel_externo_artigo:ctx.origem==='externo'?artigo:null,imovel_externo_desc_predial:ctx.origem==='externo'?descpred:null,imovel_externo_onus:ctx.origem==='externo'?onus:null,preco_proposto:doc==='proposta'?Number(d['proposta-preco'])||null:null,created_by:user?.id||null};
+  let row;if(hiddenId){const prev=await supa.from('negocios').select('partilha_estado').eq('id',hiddenId).single();if(!prev.error&&prev.data){payload.partilha_estado=ctx.temParceiro?(prev.data.partilha_estado==='nao_aplicavel'?'rascunho':prev.data.partilha_estado):'nao_aplicavel'}const q=await supa.from('negocios').update(payload).eq('id',hiddenId).select('*').single();if(q.error)throw q.error;row=q.data}else{const q=await supa.from('negocios').insert({...payload,estado:'aberto'}).select('*').single();if(q.error)throw q.error;row=q.data}
+  const h=document.getElementById(doc==='partilha'?'pt-negocio-id':`${doc}-negocio-id`);if(h)h.value=row.id;await v24LoadParceiros();await v24LoadNegocios();return row;
+}
+function v24GeneralState(n){
+  if(n.cpcv_estado==='escritura_realizada')return'concluido';if(['pronto','enviado','assinado'].includes(n.cpcv_estado))return'cpcv';const accepted=n.proposta_estado==='aceite'||n.reserva_estado==='aceite';if(accepted&&n.tem_partilha&&n.partilha_estado!=='aceite')return'aguarda_partilha';if(accepted)return'proposta_aceite';if(['enviada','em_analise','contraproposta'].includes(n.proposta_estado)||n.reserva_estado==='enviada'||n.partilha_estado==='enviada')return'negociacao';return'aberto';
+}
+async function v24UpdateDocState(negocioId,doc,estado){
+  if(!negocioId)return;const field=doc==='partilha'?'partilha_estado':doc==='proposta'?'proposta_estado':doc==='reserva'?'reserva_estado':'cpcv_estado';const current=(await supa.from('negocios').select('*').eq('id',negocioId).single()).data;if(!current)return;const next={...current,[field]:estado};const geral=v24GeneralState(next);const q=await supa.from('negocios').update({[field]:estado,estado:geral}).eq('id',negocioId);if(q.error)throw q.error;await v24LoadNegocios();
+}
+
+/* Exterior não deve ser confundido com um imóvel da nossa Carteira só por ter a mesma morada. */
+const _v24ImovelFromDocumentBase=v2ImovelFromDocument;
+v2ImovelFromDocument=function(id,d){if(['proposta','reserva'].includes(id)&&(d[`${id}-origem`]||'proprio')==='externo')return null;if(id==='partilha'&&(d.nossaPosicao||'angariadora')==='compradora')return null;return _v24ImovelFromDocumentBase(id,d)};
+
+/* ---------- Partilha normalizada / minuta que funciona nos dois sentidos ---------- */
+recolherDadosPartilha=function(){
+  const g=id=>document.getElementById(id)?.value||'';const pos=g('pt-origem')==='externo'?'compradora':'angariadora';let qa=parseFloat(g('pt-quota-ang'))||50,qc=parseFloat(g('pt-quota-comp'))||50;if(g('pt-partilha-tipo')!=='outra'){qa=50;qc=50}
+  return {negocioId:g('pt-negocio-id'),nossaPosicao:pos,partilhaTipo:g('pt-partilha-tipo')||'50-50',parceiroId:g('pt-parceiro-id'),parceiroNome:g('pt-parceiro-nome'),parceiroNif:g('pt-parceiro-nif'),parceiroAmi:g('pt-parceiro-ami'),parceiroRep:g('pt-parceiro-rep'),parceiroEmail:g('pt-parceiro-email'),parceiroTelefone:g('pt-parceiro-telefone'),imovelRef:g('pt-im-sel'),imRef:g('pt-im-ref'),imMorada:g('pt-im-morada'),imPreco:parseFloat(g('pt-im-preco'))||0,imTipologia:g('pt-im-tipologia'),comissaoPct:parseFloat(g('pt-comissao-pct'))||null,iva:parseFloat(g('pt-iva'))||23,qAng:qa,qComp:qc,comprador:g('pt-comprador'),compradorNif:g('pt-comprador-nif'),data:g('pt-data')};
+};
+function v24BuildPartilhaData(doc,d){
+  const c=v24ContextFromDoc(doc,d),own=c.nossaPosicao==='angariadora';const f=own?fichas[d[`${doc}-im-portfolio-sel`]||'']:null;const nossa=c.nossaPct??50,parc=c.parceiraPct??50;return {negocioId:d[`${doc}-negocio-id`]||'',nossaPosicao:c.nossaPosicao,partilhaTipo:c.partilhaTipo,parceiroId:c.parceiro.id,parceiroNome:c.parceiro.nome,parceiroNif:c.parceiro.nif,parceiroAmi:c.parceiro.ami,parceiroRep:c.parceiro.rep,parceiroEmail:c.parceiro.email,parceiroTelefone:c.parceiro.telefone,imovelRef:f?.ref||'',imRef:d[`${doc}-ext-ref`]||f?.ref||'',imMorada:d[`${doc}-im-morada`]||f?.morada||'',imPreco:Number(d[`${doc}-im-valor`]||f?.preco)||0,imTipologia:d[`${doc}-im-tipologia`]||f?.tipologia||'',comissaoPct:own?Number(f?.comissao_pct)||null:null,iva:own?Number(f?.iva_pct??23):23,qAng:own?nossa:parc,qComp:own?parc:nossa,comprador:(d._outorgantes_comp||[])[0]?.nome||'',compradorNif:(d._outorgantes_comp||[])[0]?.nif||'',data:new Date().toISOString().slice(0,10)};
+}
+templatePartilha=function(d){
+  const ours=d.nossaPosicao||'angariadora';const partner={nome:d.parceiroNome||'___',nif:d.parceiroNif||'___',ami:d.parceiroAmi||'___',rep:d.parceiroRep||'___'};const our={nome:agencia.nome||'___',nif:agencia.nif||'___',ami:agencia.ami||'___',rep:agencia.gerente||agenteAtual.nome||'___'};const ang=ours==='angariadora'?our:partner,comp=ours==='angariadora'?partner:our;const qa=Number(d.qAng)||50,qc=Number(d.qComp)||50;const pct=Number(d.comissaoPct)||0,price=Number(d.imPreco)||0,iva=Number(d.iva)||23;const total=pct?price*pct/100:0;const aVal=total*qa/100,cVal=total*qc/100;
+  return `<div class="doc-page">${docHeader()}<div class="doc-titulo-wrap"><h1>ACORDO DE PARTILHA DE COMISSÃO</h1><span class="doc-tipo-badge">Co-mediação entre empresas AMI · ${qa}/${qc}</span></div><p>Entre as empresas abaixo identificadas é acordada a colaboração comercial relativa ao imóvel e comprador identificados neste documento.</p>${docH2(1,'Agências intervenientes')}<p><strong>Agência Angariadora</strong> — detentora do CMI com o proprietário:<br><strong>${ang.nome}</strong>, NIF <strong>${ang.nif}</strong>, Licença AMI <strong>${ang.ami}</strong>.</p><p><strong>Agência Compradora</strong> — responsável pela apresentação do comprador:<br><strong>${comp.nome}</strong>, NIF <strong>${comp.nif}</strong>, Licença AMI <strong>${comp.ami}</strong>.</p>${docH2(2,'Negócio')}<div class="doc-highlight"><strong>Imóvel:</strong> ${d.imMorada||'___'} ${d.imRef?'· Ref. '+d.imRef:''}<br><strong>Preço indicado:</strong> ${fmtEur(price)}<br><strong>Comprador apresentado:</strong> ${d.comprador||'___'} ${d.compradorNif?'· NIF '+d.compradorNif:''}</div>${docH2(3,'Partilha acordada')}<p>As partes acordam que a remuneração efetivamente recebida pela Agência Angariadora relativamente a este negócio será partilhada na proporção de <strong>${qa}% para a Agência Angariadora</strong> e <strong>${qc}% para a Agência Compradora</strong>.</p>${pct?`<div class="doc-highlight"><strong>Simulação indicativa</strong><br>Comissão contratada: ${pct}% + IVA<br>Base estimada: ${fmtEur(total)}<br>Quota angariadora: ${fmtEur(aVal)}<br>Quota compradora: ${fmtEur(cVal)}</div>`:'<p style="font-size:11.5px;color:#666">O valor total da comissão não é fixado neste acordo. A partilha incide sobre a remuneração efetivamente devida/recebida pela Agência Angariadora no negócio.</p>'}${docH2(4,'Pagamento e cooperação')}<p>A Agência Angariadora liquidará à Agência Compradora a quota acordada após o recebimento da remuneração correspondente ao negócio, contra emissão do documento fiscal aplicável. As partes comprometem-se a cooperar na tramitação da proposta, reserva, CPCV e escritura, mantendo registo das comunicações e documentos relevantes.</p>${docH2(5,'Proteção de dados e confidencialidade')}<p>Os dados do comprador, proprietário e imóvel são tratados exclusivamente para esta transação e no cumprimento das obrigações legais aplicáveis. As condições comerciais deste acordo são confidenciais, sem prejuízo das obrigações legais de informação.</p>${docH2(6,'Lei aplicável')}<p>O presente acordo rege-se pelo direito português e constitui um acordo comercial entre empresas de mediação imobiliária devidamente licenciadas.</p><div class="doc-assinaturas"><div class="doc-ass-box"><div class="ass-title">Agência Angariadora<br><em>${ang.nome} · AMI ${ang.ami}</em></div><div class="ass-space"></div><div>_________________________________</div><div>${ang.rep||''}</div></div><div class="doc-ass-box"><div class="ass-title">Agência Compradora<br><em>${comp.nome} · AMI ${comp.ami}</em></div><div class="ass-space"></div><div>_________________________________</div><div>${comp.rep||''}</div></div></div><div class="doc-data-local">Feito em _________________________, em <strong>${fmtData(d.data)}</strong>.</div><div class="doc-footer-line">Documento gerado pelo LYVCMI · ${agencia.marca||agencia.nome} · ${new Date().toLocaleDateString('pt-PT')}</div></div>`;
+};
+
+
+/* Imóvel externo: não obrigar a nossa agência a voltar a recolher os dados do proprietário.
+   Na proposta/reserva identificamos a agência angariadora; os dados dos vendedores entram no CPCV quando forem fornecidos. */
+const _v24TemplatePropostaBase=templateProposta;
+templateProposta=function(d){
+  let html=_v24TemplatePropostaBase(d);if((d['proposta-origem']||'proprio')!=='externo')return html;const nome=d['proposta-parceiro-nome']||'Agência angariadora',ami=d['proposta-parceiro-ami']||'___',nif=d['proposta-parceiro-nif']||'___';
+  html=html.replace(/<p><strong>Proprietário\(s\) \/ Promitente\(s\) Vendedor\(es\):<\/strong>[\s\S]*?<\/p>/,`<p><strong>Agência Angariadora / destinatária da proposta:</strong> <strong>${v2Esc(nome)}</strong>, NIF ${v2Esc(nif)}, Licença AMI ${v2Esc(ami)}. A identificação do(s) proprietário(s) será confirmada pela Agência Angariadora para os atos contratuais subsequentes.</p>`);
+  return html;
+};
+const _v24TemplateReservaBase=templateReserva;
+templateReserva=function(d){
+  let html=_v24TemplateReservaBase(d);if((d['reserva-origem']||'proprio')!=='externo')return html;const nome=d['reserva-parceiro-nome']||'Agência angariadora',ami=d['reserva-parceiro-ami']||'___',nif=d['reserva-parceiro-nif']||'___';
+  html=html.replace(/<p><strong>Proprietário\(s\):<\/strong>[\s\S]*?<\/p>/,`<p><strong>Agência Angariadora / destinatária da reserva:</strong> <strong>${v2Esc(nome)}</strong>, NIF ${v2Esc(nif)}, Licença AMI ${v2Esc(ami)}. A identificação do(s) proprietário(s) será confirmada pela Agência Angariadora.</p>`);
+  return html;
+};
+
+/* ---------- Associar os documentos ao negócio e atualizar estados ---------- */
+const _v24SaveContractBase=v2SaveContract;
+v2SaveContract=async function(id,estado){
+  let negocio=null,d=null;try{
+    if(['proposta','reserva'].includes(id)){d=recolherDados(id);negocio=await v24EnsureNegocio(id,d)}
+    else if(id==='partilha'){d=recolherDadosPartilha();negocio=await v24EnsureNegocio('partilha',d)}
+    else if(id==='cpcv'){const hid=document.getElementById('cpcv-negocio-id')?.value;if(hid)negocio=v24Negocios.find(x=>x.id===hid)||(await supa.from('negocios').select('*').eq('id',hid).single()).data}
+  }catch(e){mostrarToast('Não foi possível criar o negócio: '+(e.message||e),'err');return}
+  await _v24SaveContractBase(id,estado);
+  if(!negocio)return;
+  try{
+    const r=extrairResumo(id,d||recolherDados(id));let q=supa.from('contratos').select('id').eq('agencia_id',currentAgenciaId).eq('tipo',id).eq('estado',estado).eq('morada',r.morada).order('updated_at',{ascending:false}).limit(1);const found=await q.maybeSingle();if(found.data?.id)await supa.from('contratos').update({negocio_id:negocio.id}).eq('id',found.data.id);
+    const st=estado==='rascunho'?'rascunho':(id==='cpcv'?'pronto':'pronta');await v24UpdateDocState(negocio.id,id,st);await v2LoadContratos();
+  }catch(e){console.error(e);mostrarToast('Documento guardado, mas houve erro ao associar ao negócio: '+(e.message||e),'err')}
+};
+guardarRascunho=async id=>v2SaveContract(id,'rascunho');finalizarContrato=async id=>v2SaveContract(id,'finalizado');
+
+async function v24CreatePartilhaForNegocio(negocio,doc,d){
+  const existing=await supa.from('contratos').select('*').eq('negocio_id',negocio.id).eq('tipo','partilha').eq('estado','finalizado').order('created_at',{ascending:false}).limit(1).maybeSingle();if(existing.data)return existing.data;
+  const pd=v24BuildPartilhaData(doc,d);const {data:{user}}=await supa.auth.getUser();const f=negocio.imovel_id?Object.values(fichas).find(x=>x.db_id===negocio.imovel_id):null;const morada=pd.imMorada||v24NegocioImovel(negocio);const versao=1;const snap={agencia:v2AgenciaSnapshot(),agente:{...agenteAtual},negocio:{...negocio},gerado_em:new Date().toISOString()};const ins=await supa.from('contratos').insert({agencia_id:currentAgenciaId,imovel_id:negocio.imovel_id||null,negocio_id:negocio.id,tipo:'partilha',estado:'finalizado',titulo:`Acordo de partilha — ${morada}`,morada,partes:`${agencia.nome} / ${pd.parceiroNome}`,versao,dados:pd,snapshot:snap,finalized_by:user?.id||null,finalized_at:new Date().toISOString(),created_by:user?.id||null}).select('*').single();if(ins.error)throw ins.error;try{await v2UploadPdf(ins.data,pd)}catch(e){console.error(e)}await v24UpdateDocState(negocio.id,'partilha','pronta');return ins.data;
+}
+async function v24FinalizarPacote(doc){
+  try{
+    const d=recolherDados(doc),ctx=v24ContextFromDoc(doc,d);if(!ctx.temParceiro)throw new Error('Este negócio não tem agência parceira.');const negocio=await v24EnsureNegocio(doc,d);await v2SaveContract(doc,'finalizado');await v24CreatePartilhaForNegocio(negocio,doc,d);await v2LoadContratos();await v24LoadNegocios();mostrarToast(`${doc==='proposta'?'Proposta':'Reserva'} e acordo de partilha preparados.`,'ok');v24ShowPackageReady(negocio.id);
+  }catch(e){console.error(e);mostrarToast('Erro ao preparar o pacote: '+(e.message||e),'err')}
+}
+
+/* ---------- Estados e próxima ação ---------- */
+function v24EnsureEstadoModal(){if(document.getElementById('v24-estado-modal'))return;const d=document.createElement('div');d.id='v24-estado-modal';d.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:10020;align-items:center;justify-content:center;padding:18px';d.innerHTML=`<div style="width:100%;max-width:620px;background:white;border-radius:12px;overflow:hidden"><div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between"><div><strong>Estado do negócio</strong><div id="v24-est-ref" style="font-size:11px;color:#777"></div></div><button class="btn" onclick="document.getElementById('v24-estado-modal').style.display='none'"><i class="ti ti-x"></i></button></div><div id="v24-est-body" style="padding:20px"></div></div>`;document.body.appendChild(d)}
+function v24Options(grupo,current){return Object.entries(V24_ESTADOS[grupo]).map(([v,l])=>`<option value="${v}" ${v===current?'selected':''}>${l}</option>`).join('')}
+function v24OpenEstadoNegocio(id){const n=v24Negocios.find(x=>x.id===id);if(!n)return;v24EnsureEstadoModal();document.getElementById('v24-est-ref').textContent=`${n.referencia||''} · ${v24NegocioImovel(n)}`;const share=n.tem_partilha?`<div class="ff"><label>Partilha</label><select id="v24-est-partilha">${v24Options('partilha',n.partilha_estado)}</select></div>`:'';document.getElementById('v24-est-body').innerHTML=`<div class="fg">${share}<div class="ff"><label>Proposta</label><select id="v24-est-proposta">${v24Options('proposta',n.proposta_estado)}</select></div><div class="ff"><label>Reserva</label><select id="v24-est-reserva">${v24Options('reserva',n.reserva_estado)}</select></div><div class="ff"><label>CPCV</label><select id="v24-est-cpcv">${v24Options('cpcv',n.cpcv_estado)}</select></div></div><div style="margin-top:1rem;padding:.8rem;background:var(--green-light);border-radius:8px"><strong>Próxima ação:</strong> ${v2Esc(v24NegocioNext(n))}</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem"><button class="btn" onclick="document.getElementById('v24-estado-modal').style.display='none'">Cancelar</button><button class="btn p" onclick="v24SaveEstadoNegocio('${id}')">Guardar estados</button></div>`;document.getElementById('v24-estado-modal').style.display='flex'}
+async function v24SaveEstadoNegocio(id){const n=v24Negocios.find(x=>x.id===id);if(!n)return;const payload={partilha_estado:n.tem_partilha?document.getElementById('v24-est-partilha').value:'nao_aplicavel',proposta_estado:document.getElementById('v24-est-proposta').value,reserva_estado:document.getElementById('v24-est-reserva').value,cpcv_estado:document.getElementById('v24-est-cpcv').value};payload.estado=v24GeneralState({...n,...payload});const q=await supa.from('negocios').update(payload).eq('id',id);if(q.error){mostrarToast(q.error.message,'err');return}document.getElementById('v24-estado-modal').style.display='none';await v24LoadNegocios();mostrarToast('Estados do negócio atualizados.','ok')}
+
+async function v24OpenCpcvNegocio(id){
+  const n=v24Negocios.find(x=>x.id===id)||(await supa.from('negocios').select('*').eq('id',id).single()).data;if(!n)return;go('cpcv','CPCV','A partir do negócio '+(n.referencia||''));setTimeout(async()=>{
+    let h=document.getElementById('cpcv-negocio-id');if(!h){h=document.createElement('input');h.type='hidden';h.id='cpcv-negocio-id';document.getElementById('form-cpcv')?.appendChild(h)}h.value=n.id;
+    if(n.imovel_id){const f=Object.values(fichas).find(x=>x.db_id===n.imovel_id);if(f){const sel=document.getElementById('cpcv-im-portfolio-sel');if(sel){sel.value=f.ref;aplicarImovelPortfolio('cpcv-im')}}}
+    else{const set=(s,v)=>{const e=document.getElementById('cpcv-im-'+s);if(e)e.value=v||''};set('morada',n.imovel_externo_morada);set('artigo',n.imovel_externo_artigo);set('descpred',n.imovel_externo_desc_predial);set('tipologia',n.imovel_externo_tipologia);set('onus',n.imovel_externo_onus);set('valor',n.preco_proposto||n.imovel_externo_preco)}
+    const docs=await supa.from('contratos').select('tipo,dados').eq('negocio_id',n.id).eq('estado','finalizado').in('tipo',['proposta','reserva']).order('created_at',{ascending:false}).limit(1);const d=docs.data?.[0]?.dados;if(d){const p=d._partes?.['proposta-comp']||d._partes?.['reserva-res'];if(p)ogRestoreSnapshot('cpcv-comp',p);const pv=Number(d['proposta-preco'])||0;if(pv){const e=document.getElementById('cpcv-im-valor');if(e)e.value=pv}}
+  },350)}
+
+/* ---------- Pacote de email: Partilha + Proposta/Reserva ---------- */
+function v24EnsurePackageModal(){if(document.getElementById('v24-package-modal'))return;const d=document.createElement('div');d.id='v24-package-modal';d.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:10025;align-items:center;justify-content:center;padding:18px';d.innerHTML=`<div style="width:100%;max-width:650px;background:#fff;border-radius:12px;overflow:hidden"><div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between"><div><strong>Enviar à agência parceira</strong><div id="v24-pack-ref" style="font-size:11px;color:#777"></div></div><button class="btn" onclick="document.getElementById('v24-package-modal').style.display='none'"><i class="ti ti-x"></i></button></div><div style="padding:20px"><div id="v24-pack-docs" class="nota inf"></div><div class="ff" style="margin-bottom:10px"><label>Destinatário</label><input id="v24-pack-to"></div><div class="ff" style="margin-bottom:10px"><label>Assunto</label><input id="v24-pack-subject"></div><div class="ff"><label>Mensagem</label><textarea id="v24-pack-message" rows="7"></textarea></div><div id="v24-pack-error" style="display:none;color:var(--red);font-size:12px;margin-top:8px"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn" onclick="document.getElementById('v24-package-modal').style.display='none'">Fechar</button><button class="btn p" id="v24-pack-send" onclick="v24SendPackage()"><i class="ti ti-send"></i>Enviar documentos</button></div></div></div>`;document.body.appendChild(d)}
+let v24PackageNegocioId=null,v24PackageContractIds=[];
+async function v24ShowPackageReady(id){await v24OpenPackageEmail(id)}
+async function v24OpenPackageEmail(id){
+  const n=v24Negocios.find(x=>x.id===id)||(await supa.from('negocios').select('*').eq('id',id).single()).data;if(!n)return;const q=await supa.from('contratos').select('id,tipo,document_ref,pdf_path').eq('negocio_id',id).eq('estado','finalizado').in('tipo',['partilha','proposta','reserva']).order('created_at',{ascending:false});if(q.error){mostrarToast(q.error.message,'err');return}const by={};(q.data||[]).forEach(c=>{if(!by[c.tipo])by[c.tipo]=c});const docs=[by.partilha,by.proposta||by.reserva].filter(Boolean);if(!docs.length){mostrarToast('Ainda não existem documentos finalizados para enviar.','err');return}v24PackageNegocioId=id;v24PackageContractIds=docs.map(x=>x.id);v24EnsurePackageModal();document.getElementById('v24-pack-ref').textContent=`${n.referencia||''} · ${v24NegocioImovel(n)}`;document.getElementById('v24-pack-docs').innerHTML='<i class="ti ti-paperclip"></i><span><strong>Anexos:</strong> '+docs.map(x=>v2Esc(x.document_ref||x.tipo)).join(' + ')+'</span>';document.getElementById('v24-pack-to').value=n.parceiro_email||'';document.getElementById('v24-pack-subject').value=`${by.proposta?'Proposta de compra':'Reserva'} + acordo de partilha — ${v24NegocioImovel(n)}`;document.getElementById('v24-pack-message').value=`Boa tarde,\n\nSegue em anexo ${by.proposta?'a proposta do nosso cliente':'a reserva'} e o acordo de partilha de comissão relativo ao imóvel ${v24NegocioImovel(n)}.\n\nAguardamos a vossa confirmação.\n\nCom os melhores cumprimentos,\n${agenteAtual.nome||agencia.gerente||''}\n${agencia.marca||agencia.nome||''}`;document.getElementById('v24-package-modal').style.display='flex';
+}
+async function v24SendPackage(){
+  const to=document.getElementById('v24-pack-to').value.split(',').map(x=>x.trim()).filter(Boolean),assunto=document.getElementById('v24-pack-subject').value.trim(),mensagem=document.getElementById('v24-pack-message').value.trim(),err=document.getElementById('v24-pack-error'),btn=document.getElementById('v24-pack-send');if(!to.length){err.textContent='Indica o email da agência parceira.';err.style.display='block';return}btn.disabled=true;err.style.display='none';try{const r=await supa.functions.invoke('send-document-email',{body:{contrato_ids:v24PackageContractIds,destinatarios:to,assunto,mensagem}});if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error);const n=v24Negocios.find(x=>x.id===v24PackageNegocioId);const up={};if(n?.tem_partilha)up.partilha_estado='enviada';const docs=await supa.from('contratos').select('tipo').in('id',v24PackageContractIds);if((docs.data||[]).some(x=>x.tipo==='proposta'))up.proposta_estado='enviada';if((docs.data||[]).some(x=>x.tipo==='reserva'))up.reserva_estado='enviada';up.estado='negociacao';await supa.from('negocios').update(up).eq('id',v24PackageNegocioId);document.getElementById('v24-package-modal').style.display='none';await v24LoadNegocios();mostrarToast('Pacote enviado e estados atualizados.','ok')}catch(e){err.textContent='Envio indisponível: '+(e.message||e);err.style.display='block'}finally{btn.disabled=false}
+}
+
+/* ---------- Carregamento / integração ---------- */
+const _v24LoadCoreBase=v2LoadCore;
+v2LoadCore=async function(){await _v24LoadCoreBase();await Promise.all([v24LoadParceiros(),v24LoadNegocios()])};
+const _v24GoBase=go;
+go=function(id,t,s){_v24GoBase(id,t,s);if(['proposta','reserva','partilha'].includes(id))setTimeout(()=>{if(id==='proposta'||id==='reserva'){v24PopulatePortfolioForDoc(id);v24SetOrigem(id,document.getElementById(`${id}-origem`)?.value||'proprio')}else v24PopulatePartilhaPortfolio();v24RefreshPartnerSelects()},60)};
+
+document.addEventListener('DOMContentLoaded',v24EnsureNegociosUI);if(document.readyState!=='loading')v24EnsureNegociosUI();
 </script>
 
 </body>
