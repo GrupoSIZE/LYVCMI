@@ -6,6 +6,7 @@
 <title>LYVCMI — Back-office Sunvila</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --green:#1D9E75;
@@ -277,6 +278,67 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 </style>
 </head>
 <body>
+
+<!-- ===== ECRÃ DE LOGIN ===== -->
+<div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:400px;padding:2rem;background:var(--surface-1);border-radius:16px;border:0.5px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.12)">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:2rem">
+      <svg width="140" height="30" viewBox="0 0 140 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#0B1F3A">LYV</text>
+        <circle cx="44" cy="19" r="2.8" fill="#C5A84B" opacity="0.8"/>
+        <text x="48" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#C5A84B">CMI</text>
+      </svg>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:6px">Back-office do mediador AMI</div>
+    </div>
+
+    <!-- Tabs login / recuperar -->
+    <div id="auth-tab-login">
+      <div style="margin-bottom:1.2rem">
+        <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Email</label>
+        <input id="auth-email" type="email" placeholder="hello@lyvantcapital.com"
+          style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+      </div>
+      <div style="margin-bottom:1.5rem">
+        <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••"
+          style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+      </div>
+      <button onclick="authLogin()" id="auth-btn"
+        style="width:100%;padding:.75rem;background:#0B1F3A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">
+        Entrar
+      </button>
+      <div id="auth-error" style="display:none;margin-top:.75rem;padding:.6rem .9rem;background:#FCEBEB;color:#A32D2D;border-radius:8px;font-size:13px"></div>
+      <div style="text-align:center;margin-top:1rem">
+        <span onclick="authShowReset()" style="font-size:12px;color:var(--text-secondary);cursor:pointer;text-decoration:underline">Esqueci a password</span>
+      </div>
+    </div>
+
+    <!-- Tab recuperar password -->
+    <div id="auth-tab-reset" style="display:none">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1rem">Introduz o teu email — enviamos um link para definires uma nova password.</p>
+      <div style="margin-bottom:1.2rem">
+        <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Email</label>
+        <input id="auth-reset-email" type="email" placeholder="hello@lyvantcapital.com"
+          style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+      </div>
+      <button onclick="authSendReset()"
+        style="width:100%;padding:.75rem;background:#0B1F3A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">
+        Enviar link
+      </button>
+      <div id="auth-reset-msg" style="display:none;margin-top:.75rem;padding:.6rem .9rem;background:#EAF3DE;color:#3B6D11;border-radius:8px;font-size:13px"></div>
+      <div style="text-align:center;margin-top:1rem">
+        <span onclick="authShowLogin()" style="font-size:12px;color:var(--text-secondary);cursor:pointer;text-decoration:underline">← Voltar ao login</span>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:1.5rem;font-size:11px;color:var(--text-secondary)">
+      LYVCMI · Acesso restrito · <a href="mailto:hello@lyvantcapital.com" style="color:var(--text-secondary)">Pedir acesso</a>
+    </div>
+  </div>
+</div>
+<!-- ===== FIM ECRÃ LOGIN ===== -->
+
 
 <div class="app">
 <div class="sb">
@@ -2778,6 +2840,122 @@ function cfgUpdateSidebar(){
   }catch(e){console.warn('cfg init',e);}
   cfgUpdateSidebar();
 })();
+
+/* ====================== SUPABASE AUTH ====================== */
+const SUPA_URL = 'https://flyxwjxpjadebfdsdmyi.supabase.co';
+const SUPA_KEY = 'sb_publishable_MfZeiihPgPJGQwWhLbTD6w_XChjxLun';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+function authShowLogin(){
+  document.getElementById('auth-tab-login').style.display='block';
+  document.getElementById('auth-tab-reset').style.display='none';
+}
+function authShowReset(){
+  document.getElementById('auth-tab-login').style.display='none';
+  document.getElementById('auth-tab-reset').style.display='block';
+}
+
+async function authLogin(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const btn=document.getElementById('auth-btn');
+  const err=document.getElementById('auth-error');
+  err.style.display='none';
+  btn.textContent='A entrar...'; btn.disabled=true;
+  const {error}=await supa.auth.signInWithPassword({email,password});
+  if(error){
+    err.textContent=error.message==='Invalid login credentials'
+      ?'Email ou password incorrectos.'
+      :error.message;
+    err.style.display='block';
+    btn.textContent='Entrar'; btn.disabled=false;
+  }
+  // Se OK: onAuthStateChange detecta e mostra a app
+}
+
+async function authSendReset(){
+  const email=document.getElementById('auth-reset-email').value.trim();
+  const msg=document.getElementById('auth-reset-msg');
+  if(!email)return;
+  await supa.auth.resetPasswordForEmail(email,{
+    redirectTo:'https://www.lyvcmi.com'
+  });
+  msg.textContent='Link enviado! Verifica o teu email.';
+  msg.style.display='block';
+}
+
+async function authLogout(){
+  await supa.auth.signOut();
+}
+
+// Listener de sessão — controla o que é mostrado
+supa.auth.onAuthStateChange((event,session)=>{
+  const authScreen=document.getElementById('auth-screen');
+  const appSb=document.querySelector('.sb');
+  const appMain=document.querySelector('.main');
+  if(session){
+    // Utilizador autenticado — mostra app, esconde login
+    authScreen.style.display='none';
+    if(appSb)appSb.style.display='';
+    if(appMain)appMain.style.display='';
+    // Carregar perfil da agência do Supabase
+    authLoadAgencia(session.user.id);
+  } else {
+    // Não autenticado — mostra login, esconde app
+    authScreen.style.display='flex';
+    if(appSb)appSb.style.display='none';
+    if(appMain)appMain.style.display='none';
+  }
+});
+
+async function authLoadAgencia(userId){
+  const {data}=await supa.from('agencias').select('*').eq('user_id',userId).single();
+  if(data){
+    // Preencher objeto agencia com dados da cloud
+    const map={
+      nome:'nome',marca:'marca',nif:'nif',ami:'ami',morada:'morada',
+      email:'email',telefone:'telefone',gerente:'gerente',
+      gerenteNif:'gerente_nif',seguradora:'seguradora',
+      seguroApolice:'seguro_apolice',seguroCapital:'seguro_capital',
+      seguroValidade:'seguro_validade',iban:'iban',banco:'banco',
+      logo:'logo_url'
+    };
+    Object.entries(map).forEach(([k,v])=>{if(data[v])agencia[k]=data[v];});
+    cfgUpdateSidebar();
+  }
+}
+
+// Guardar agência no Supabase (chamado pelo cfgSave)
+const _cfgSaveOrig=cfgSave;
+cfgSave=async function(){
+  _cfgSaveOrig();
+  const {data:{user}}=await supa.auth.getUser();
+  if(!user)return;
+  const payload={
+    user_id:user.id,
+    nome:agencia.nome||'',marca:agencia.marca||'',nif:agencia.nif||'',
+    ami:agencia.ami||'',morada:agencia.morada||'',email:agencia.email||'',
+    telefone:agencia.telefone||'',gerente:agencia.gerente||'',
+    gerente_nif:agencia.gerenteNif||'',seguradora:agencia.seguradora||'',
+    seguro_apolice:agencia.seguroApolice||'',seguro_capital:agencia.seguroCapital||'',
+    seguro_validade:agencia.seguroValidade||null,iban:agencia.iban||'',
+    banco:agencia.banco||'',logo_url:agencia.logo||''
+  };
+  await supa.from('agencias').upsert(payload,{onConflict:'user_id'});
+};
+
+// Botão logout na sidebar
+document.addEventListener('DOMContentLoaded',()=>{
+  const sf=document.querySelector('.sf');
+  if(sf){
+    const logoutBtn=document.createElement('button');
+    logoutBtn.innerHTML='<i class="ti ti-logout"></i>';
+    logoutBtn.title='Sair';
+    logoutBtn.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:16px;padding:4px;margin-left:4px';
+    logoutBtn.onclick=authLogout;
+    sf.appendChild(logoutBtn);
+  }
+});
 
 </script>
 </body>
