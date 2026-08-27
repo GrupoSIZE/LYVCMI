@@ -2755,7 +2755,12 @@ const CFG_FIELDS=[
   'iban','banco'
 ];
 
-function cfgLoad(){
+async function cfgLoad(){
+  // Se agencia.nome ainda está vazio, tentar carregar do Supabase primeiro
+  if(!agencia.nome){
+    const {data:{user}}=await supa.auth.getUser();
+    if(user) await authLoadAgencia(user.id);
+  }
   // Preencher formulário com valores actuais do objeto agencia
   CFG_FIELDS.forEach(k=>{
     const el=document.getElementById('cfg-'+k);
