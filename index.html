@@ -3686,5 +3686,263 @@ preVisualizar=function(id){v2ContratoPreviewId=null;_v2PreVisualizarBase(id)};
 gerarWordAtual=function(){if(v2ContratoPreviewId)return gerarWordBib(v2ContratoPreviewId);if(contratoAtual)gerarWord(contratoAtual)};
 
 </script>
+<script>
+/* ============================================================
+   LYVCMI V2.1 — correção robusta dos outorgantes
+   - Pessoa singular e pessoa coletiva
+   - CMI nunca finaliza sem proprietário identificável
+   - Snapshot do proprietário acompanha o imóvel
+   ============================================================ */
+
+function v21ParteDefault(){
+  return {denominacao:'',nif:'',registo:'',morada:'',email:'',telefone:''};
+}
+
+/* Substitui o bloco de outorgantes para dar IDs estáveis aos campos da pessoa coletiva. */
+outorgantesBlock=function(prefix,tituloParte,iconClass){
+  outorgantesState[prefix]={
+    tipo:'singular',estadoCivil:'solteiro',casadoModo:'ambos',
+    outorgantes:[{}],reps:[{}],empresa:v21ParteDefault()
+  };
+  return `
+  <div class="form-card">
+    <div class="fc-title"><i class="ti ${iconClass}"></i>${tituloParte}</div>
+    <label>Tipo de outorgante</label>
+    <div class="tog-row">
+      <div class="tog on" id="${prefix}-tipo-singular" onclick="ogSetTipo('${prefix}','singular')"><i class="ti ti-user"></i>Pessoa singular</div>
+      <div class="tog" id="${prefix}-tipo-coletiva" onclick="ogSetTipo('${prefix}','coletiva')"><i class="ti ti-building"></i>Pessoa coletiva</div>
+    </div>
+
+    <div id="${prefix}-bloco-singular">
+      <label>Estado civil</label>
+      <div class="sub-tog-row">
+        <div class="sub-tog on" id="${prefix}-ec-solteiro" onclick="ogSetEC('${prefix}','solteiro')">Solteiro(a) / divorciado(a) / viúvo(a)</div>
+        <div class="sub-tog" id="${prefix}-ec-casado" onclick="ogSetEC('${prefix}','casado')">Casado(a) / união de facto</div>
+      </div>
+      <div id="${prefix}-bloco-casado-opcoes" style="display:none">
+        <label>Quem outorga o contrato?</label>
+        <div class="sub-tog-row">
+          <div class="sub-tog on" id="${prefix}-cas-ambos" onclick="ogSetCasadoModo('${prefix}','ambos')">Ambos os cônjuges</div>
+          <div class="sub-tog" id="${prefix}-cas-um" onclick="ogSetCasadoModo('${prefix}','um')">Apenas 1 (bem próprio)</div>
+        </div>
+        <div class="casados-info" id="${prefix}-casado-info"><i class="ti ti-scale"></i>Regime de comunhão: por regra, ambos os cônjuges devem outorgar quando o imóvel é bem comum do casal.</div>
+      </div>
+      <div id="${prefix}-outorgantes-lista" style="margin-top:.8rem"></div>
+      <button type="button" class="add-btn" onclick="ogAddOutorgante('${prefix}')"><i class="ti ti-plus"></i>Adicionar outorgante (herdeiro, comproprietário...)</button>
+    </div>
+
+    <div id="${prefix}-bloco-coletiva" style="display:none">
+      <div class="fg" style="margin-top:.8rem">
+        <div class="ff full"><label>Denominação social</label><input id="${prefix}-empresa-nome" placeholder="Nome da empresa"></div>
+        <div class="ff"><label>NIF</label><input id="${prefix}-empresa-nif" placeholder="000000000"></div>
+        <div class="ff"><label>Registo comercial / CRC</label><input id="${prefix}-empresa-registo" placeholder="Conservatória / matrícula"></div>
+        <div class="ff full"><label>Sede social</label><input id="${prefix}-empresa-morada" placeholder="Morada completa"></div>
+        <div class="ff"><label>Email</label><input id="${prefix}-empresa-email" type="email" placeholder="geral@empresa.pt"></div>
+        <div class="ff"><label>Telefone</label><input id="${prefix}-empresa-telefone" placeholder="+351 ..."></div>
+      </div>
+      <label>Representantes legais</label>
+      <div id="${prefix}-reps-lista" style="margin-top:.5rem"></div>
+      <button type="button" class="add-btn" onclick="ogAddRep('${prefix}')"><i class="ti ti-plus"></i>Adicionar representante legal</button>
+    </div>
+  </div>`;
+};
+
+function v21CaptureEmpresa(prefix){
+  const st=outorgantesState[prefix]; if(!st)return;
+  st.empresa={
+    denominacao:document.getElementById(prefix+'-empresa-nome')?.value||st.empresa?.denominacao||'',
+    nif:document.getElementById(prefix+'-empresa-nif')?.value||st.empresa?.nif||'',
+    registo:document.getElementById(prefix+'-empresa-registo')?.value||st.empresa?.registo||'',
+    morada:document.getElementById(prefix+'-empresa-morada')?.value||st.empresa?.morada||'',
+    email:document.getElementById(prefix+'-empresa-email')?.value||st.empresa?.email||'',
+    telefone:document.getElementById(prefix+'-empresa-telefone')?.value||st.empresa?.telefone||''
+  };
+  const repsLista=document.getElementById(prefix+'-reps-lista');
+  if(repsLista){
+    st.reps=[...repsLista.querySelectorAll('.outorgante-card')].map(card=>{
+      const i=card.querySelectorAll('input');
+      return {nome:i[0]?.value||'',nif:i[1]?.value||'',doc:i[2]?.value||'',cargo:i[3]?.value||''};
+    });
+  }
+}
+function v21FillEmpresa(prefix){
+  const e=outorgantesState[prefix]?.empresa||v21ParteDefault();
+  const map={
+    [prefix+'-empresa-nome']:e.denominacao,[prefix+'-empresa-nif']:e.nif,
+    [prefix+'-empresa-registo']:e.registo,[prefix+'-empresa-morada']:e.morada,
+    [prefix+'-empresa-email']:e.email,[prefix+'-empresa-telefone']:e.telefone
+  };
+  Object.entries(map).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||''});
+}
+
+const _v21OgSetTipo=ogSetTipo;
+ogSetTipo=function(prefix,t){
+  const st=outorgantesState[prefix];
+  if(st?.tipo==='singular' && typeof v2CaptureOutorgantes==='function')v2CaptureOutorgantes(prefix);
+  if(st?.tipo==='coletiva')v21CaptureEmpresa(prefix);
+  _v21OgSetTipo(prefix,t);
+  if(!outorgantesState[prefix].empresa)outorgantesState[prefix].empresa=v21ParteDefault();
+  if(t==='coletiva'){ogRenderReps(prefix);v21FillEmpresa(prefix)}
+};
+
+/* Snapshot completo, incluindo pessoa coletiva. */
+ogSnapshot=function(prefix){
+  const st=outorgantesState[prefix];if(!st)return null;
+  if(st.tipo==='coletiva'){
+    v21CaptureEmpresa(prefix);
+    return {tipo:'coletiva',empresa:{...st.empresa},reps:JSON.parse(JSON.stringify(st.reps||[])),outorgantes:[]};
+  }
+  if(typeof v2CaptureOutorgantes==='function')v2CaptureOutorgantes(prefix);
+  return {tipo:'singular',estadoCivil:st.estadoCivil,casadoModo:st.casadoModo,outorgantes:JSON.parse(JSON.stringify(st.outorgantes||[{}])),reps:[]};
+};
+
+ogRestoreSnapshot=function(prefix,snap){
+  if(!snap)return;
+  if(!outorgantesState[prefix])outorgantesState[prefix]={tipo:'singular',estadoCivil:'solteiro',casadoModo:'ambos',outorgantes:[{}],reps:[{}],empresa:v21ParteDefault()};
+  if((snap.tipo||'singular')==='coletiva'){
+    outorgantesState[prefix].empresa={...v21ParteDefault(),...(snap.empresa||{})};
+    outorgantesState[prefix].reps=JSON.parse(JSON.stringify(snap.reps?.length?snap.reps:[{}]));
+    ogSetTipo(prefix,'coletiva');ogRenderReps(prefix);v21FillEmpresa(prefix);return;
+  }
+  ogSetTipo(prefix,'singular');
+  const st=outorgantesState[prefix];st.estadoCivil=snap.estadoCivil||'solteiro';st.casadoModo=snap.casadoModo||'ambos';st.outorgantes=JSON.parse(JSON.stringify(snap.outorgantes?.length?snap.outorgantes:[{}]));
+  document.getElementById(prefix+'-ec-solteiro')?.classList.toggle('on',st.estadoCivil!=='casado');
+  document.getElementById(prefix+'-ec-casado')?.classList.toggle('on',st.estadoCivil==='casado');
+  const b=document.getElementById(prefix+'-bloco-casado-opcoes');if(b)b.style.display=st.estadoCivil==='casado'?'block':'none';
+  ogRenderOutorgantes(prefix);
+};
+
+function v21ReadParte(prefix){
+  const st=outorgantesState[prefix];if(!st)return null;
+  return ogSnapshot(prefix);
+}
+
+/* Recolha de dados com mapa explícito das partes. */
+recolherDados=function(id){
+  const wrap=document.getElementById('form-'+id);if(!wrap)return{};const d={};
+  wrap.querySelectorAll('input[id],select[id],textarea[id]').forEach(el=>{if(!el.disabled)d[el.id]=el.value});
+  d._outorgantes_vend=[];d._outorgantes_comp=[];d._reps=[];d._partes={};
+  const prefixesById={
+    'cm-excl':['cmexcl-cli'],'cm-abrt':['cmabrt-cli'],
+    'reserva':['reserva-prop','reserva-res'],'proposta':['proposta-vend','proposta-comp'],'cpcv':['cpcv-vend','cpcv-comp']
+  };
+  (prefixesById[id]||[]).forEach(prefix=>{d._partes[prefix]=v21ReadParte(prefix)});
+  wrap.querySelectorAll('[id$="-outorgantes-lista"]').forEach(lista=>{
+    const isComp=lista.id.startsWith('cpcv-comp')||lista.id.startsWith('proposta-comp')||lista.id.startsWith('reserva-res');
+    lista.querySelectorAll('.outorgante-card').forEach(card=>{const i=card.querySelectorAll('input');const o={tipo:'singular',nome:i[0]?.value||'',nif:i[1]?.value||'',doc:i[2]?.value||'',morada:i[3]?.value||'',email:i[4]?.value||'',telefone:i[5]?.value||''};(isComp?d._outorgantes_comp:d._outorgantes_vend).push(o)});
+  });
+  /* Para compatibilidade com o resto do sistema, uma pessoa coletiva entra também como proprietário/comprador lógico. */
+  Object.entries(d._partes).forEach(([prefix,p])=>{
+    if(p?.tipo!=='coletiva'||!p.empresa?.denominacao)return;
+    const o={tipo:'coletiva',nome:p.empresa.denominacao,nif:p.empresa.nif||'',doc:p.empresa.registo||'',morada:p.empresa.morada||'',email:p.empresa.email||'',telefone:p.empresa.telefone||'',empresa:p.empresa,reps:p.reps||[]};
+    const buyer=prefix.startsWith('cpcv-comp')||prefix.startsWith('proposta-comp')||prefix.startsWith('reserva-res');
+    (buyer?d._outorgantes_comp:d._outorgantes_vend).push(o);
+  });
+  return d;
+};
+
+/* Contactos: respeitar pessoa coletiva. */
+v2FindOrCreateContact=async function(o){
+  if(!o?.nome)return null;let q=supa.from('contactos').select('*').eq('agencia_id',currentAgenciaId);
+  if(o.nif)q=q.eq('nif',o.nif);else if(o.email)q=q.eq('email',o.email);else q=q.eq('nome',o.nome);
+  const found=await q.limit(1).maybeSingle();if(!found.error&&found.data)return found.data;
+  const {data:{user}}=await supa.auth.getUser();
+  const tipo=o.tipo==='coletiva'?'coletiva':'singular';
+  const ins=await supa.from('contactos').insert({agencia_id:currentAgenciaId,tipo,nome:o.nome,nif:o.nif||null,email:o.email||null,telefone:o.telefone||null,documento:o.doc||null,morada:o.morada||null,empresa:tipo==='coletiva'?o.nome:null,created_by:user?.id||null}).select('*').single();
+  if(ins.error)throw ins.error;return ins.data;
+};
+
+/* Guardar o snapshot integral do proprietário no próprio imóvel. */
+v2CreateImovelFromCMI=async function(id,d){
+  const prefix=id==='cm-excl'?'cmexcl':'cmabrt';
+  const parte=d._partes?.[prefix+'-cli']||null;
+  const owners=d._outorgantes_vend||[];const {data:{user}}=await supa.auth.getUser();
+  const payload={agencia_id:currentAgenciaId,morada:d[`${prefix}-im-morada`]||'',tipologia:d[`${prefix}-im-tipologia`]||'T2',preco:parseFloat(d[`${prefix}-im-valor`])||0,estado:'ativo',regime:id==='cm-excl'?'Exclusivo':'Não exclusivo',artigo:d[`${prefix}-im-artigo`]||'',desc_predial:d[`${prefix}-im-descpred`]||'',finalidade:d[`${prefix}-im-finalidade`]||'',onus:d[`${prefix}-im-onus`]||'',comissao_pct:parseFloat(d[`${prefix}-cond-comissao`])||agencia.comissao||3,iva_pct:(d[`${prefix}-cond-ivacond`]||'23%').includes('23')?23:0,cmi_inicio:d[`${prefix}-cond-datainicio`]||null,agente_responsavel_id:agenteAtual.id||null,docs_json:V2_DEFAULT_DOCS,dados_json:{proprietario_snapshot:parte},created_by:user?.id||null};
+  const ins=await supa.from('imoveis').insert(payload).select('*').single();if(ins.error)throw ins.error;const row=ins.data;
+  const ownerRows=[];
+  for(let i=0;i<owners.length;i++){const c=await v2FindOrCreateContact(owners[i]);if(c){ownerRows.push(c);await supa.from('imovel_contactos').upsert({agencia_id:currentAgenciaId,imovel_id:row.id,contacto_id:c.id,papel:'proprietario',principal:i===0},{onConflict:'imovel_id,contacto_id,papel'})}}
+  const ref=row.referencia;fichas[ref]={db_id:row.id,ref,title:`${ref} — ${row.morada}`,morada:row.morada,proprietario:ownerRows.map(x=>x.nome).join(' / '),proprietarioSnap:parte||v2OwnerSnap(ownerRows),tipologia:row.tipologia,regime:row.regime,estado:row.estado,ec:'bb',preco:Number(row.preco)||0,artigo:row.artigo||'',descpred:row.desc_predial||'',onus:row.onus||'',docs:JSON.parse(JSON.stringify(V2_DEFAULT_DOCS)),info:[{l:'Proprietário',v:ownerRows.map(x=>x.nome).join(' / ')||'—'},{l:'Tipologia',v:row.tipologia},{l:'Regime',v:row.regime},{l:'Ónus',v:row.onus||'—'},{l:'Preço pedido',v:'€ '+Number(row.preco||0).toLocaleString('pt-PT')}]};
+  const pct=Number(row.comissao_pct)||3,base=Number(row.preco)||0,semIva=base*pct/100,iva=semIva*(Number(row.iva_pct)||0)/100;
+  await supa.from('comissoes').insert({agencia_id:currentAgenciaId,imovel_id:row.id,tipo:'receber',descricao:`Comissão prevista ${ref}`,percentagem:pct,base,valor_sem_iva:semIva,iva,valor_total:semIva+iva,estado:'prevista',created_by:user?.id||null});
+  return row;
+};
+
+/* Carregamento dos imóveis preserva o snapshot integral, incluindo empresas. */
+v2LoadImoveis=async function(){
+  if(!currentAgenciaId)return;
+  const {data,error}=await supa.from('imoveis').select('*, imovel_contactos(papel,principal,contactos(*))').eq('agencia_id',currentAgenciaId).order('created_at',{ascending:true});
+  if(error){console.error(error);return}
+  Object.keys(fichas).forEach(k=>delete fichas[k]);let maxNum=0;
+  (data||[]).forEach(r=>{
+    const owners=(r.imovel_contactos||[]).filter(x=>x.papel==='proprietario').map(x=>x.contactos).filter(Boolean);
+    const prop=owners.map(x=>x.nome).filter(Boolean).join(' / ')||'';
+    const ref=r.referencia||('IM-'+r.id.slice(0,6));const n=parseInt((ref.match(/\d+/)||['0'])[0]);maxNum=Math.max(maxNum,n||0);
+    const snap=r.dados_json?.proprietario_snapshot||v2OwnerSnap(owners);
+    fichas[ref]={db_id:r.id,ref,title:`${ref} — ${r.morada||'Novo imóvel'}`,morada:r.morada||'',proprietario:prop,proprietarioSnap:snap,tipologia:r.tipologia||'T2',regime:r.regime||'Exclusivo',estado:r.estado||'ativo',ec:'bb',preco:Number(r.preco)||0,artigo:r.artigo||'',descpred:r.desc_predial||'',onus:r.onus||'',docs:v2DocsFromRow(r),info:[{l:'Proprietário',v:prop||'—'},{l:'Tipologia',v:r.tipologia||'—'},{l:'Regime',v:r.regime||'—'},{l:'Ónus',v:r.onus||'—'},{l:'Preço pedido',v:'€ '+Number(r.preco||0).toLocaleString('pt-PT')}],dataVenda:r.data_venda?v2DatePT(r.data_venda):'',comissaoRecebida:Number(r.comissao_recebida)||0};
+  });
+  fichaSeq=maxNum+1;await v2LoadFotos();renderDash();if(document.getElementById('pg-carteira')?.classList.contains('on'))renderCarteira();refreshPortfolioSelectors();
+};
+
+/* CMI: pessoa coletiva é renderizada como tal, não como pessoa singular vazia. */
+const _v21TemplateCmExclBase=templateCmExcl;
+templateCmExcl=function(d,tipo){
+  const prefix=tipo==='excl'?'cmexcl':'cmabrt';
+  const parte=d._partes?.[prefix+'-cli'];
+  if(!parte||parte.tipo!=='coletiva')return _v21TemplateCmExclBase(d,tipo);
+  const e=parte.empresa||{};const reps=parte.reps||[];
+  const repTxt=reps.filter(r=>r.nome).map(r=>`<strong>${r.nome}</strong>${r.nif?`, NIF <strong>${r.nif}</strong>`:''}${r.doc?`, documento de identificação n.º <strong>${r.doc}</strong>`:''}, na qualidade de <strong>${r.cargo||'representante legal'}</strong>`).join(', e ')||'<strong>[representante legal a identificar]</strong>';
+  const empresaTxt=`<strong>${e.denominacao||'[denominação a identificar]'}</strong>, pessoa coletiva n.º <strong>${e.nif||'___'}</strong>${e.registo?`, matriculada/registada sob <strong>${e.registo}</strong>`:''}, com sede em <strong>${e.morada||'___'}</strong>, neste ato representada por ${repTxt}`;
+  /* A minuta base já contém todas as cláusulas. Inserimos temporariamente uma versão lógica do proprietário e substituímos apenas o parágrafo de identificação gerado. */
+  const clone=JSON.parse(JSON.stringify(d));
+  clone._outorgantes_vend=[{nome:'__LYVCMI_EMPRESA__',nif:'',doc:'',morada:''}];
+  let html=_v21TemplateCmExclBase(clone,tipo);
+  html=html.replace(/<strong>__LYVCMI_EMPRESA__<\/strong>, portador\(a\) do documento de identificação n\.º <strong>___<\/strong>, contribuinte fiscal n\.º <strong>___<\/strong>/,empresaTxt);
+  html=html.replace(/<div style="margin-top:4px;font-size:11px">__LYVCMI_EMPRESA__<\/div>/,`<div style="margin-top:4px;font-size:11px">${v2Esc(e.denominacao||'')}</div>${reps[0]?.nome?`<div style="margin-top:2px;font-size:10px;color:#666">${v2Esc(reps[0].nome)} · ${v2Esc(reps[0].cargo||'Representante legal')}</div>`:''}`);
+  return html;
+};
+
+function v21ValidateCMI(id,d){
+  if(id!=='cm-excl'&&id!=='cm-abrt')return null;
+  const prefix=id==='cm-excl'?'cmexcl':'cmabrt';const p=d._partes?.[prefix+'-cli'];
+  if(!p)return 'Identifica o proprietário antes de finalizar o CMI.';
+  if(p.tipo==='coletiva'){
+    if(!p.empresa?.denominacao?.trim())return 'Indica a denominação social do proprietário.';
+    if(!p.empresa?.nif?.trim())return 'Indica o NIF da empresa proprietária.';
+    if(!(p.reps||[]).some(r=>r.nome?.trim()))return 'Indica pelo menos um representante legal da empresa proprietária.';
+  }else{
+    if(!(p.outorgantes||[]).some(o=>o.nome?.trim()))return 'Indica o nome do proprietário.';
+  }
+  if(!d[`${prefix}-im-morada`]?.trim())return 'Indica a morada do imóvel.';
+  return null;
+}
+
+/* Validação antes de criar imóvel/documento definitivo. */
+const _v21V2SaveContract=v2SaveContract;
+v2SaveContract=async function(id,estado){
+  if(estado==='finalizado'&&(id==='cm-excl'||id==='cm-abrt')){
+    const d=recolherDados(id);const err=v21ValidateCMI(id,d);if(err){mostrarToast(err,'err');return}
+  }
+  return _v21V2SaveContract(id,estado);
+};
+guardarRascunho=async id=>v2SaveContract(id,'rascunho');
+finalizarContrato=async id=>v2SaveContract(id,'finalizado');
+
+/* Ao editar um contrato, restaurar a estrutura real da parte (singular/coletiva). */
+const _v21EditarContratoBib=editarContratoBib;
+editarContratoBib=function(cid){
+  const c=v2FindContract(cid);if(!c)return _v21EditarContratoBib(cid);
+  v2ContractSourceImovelId=c.imovel_id||null;
+  go(c.tipo,tipoLabels[c.tipo]||c.tipo,c.estado==='finalizado'?'Nova versão a partir de '+c.document_ref:'A editar — '+(c.document_ref||c.id));
+  setTimeout(()=>{
+    Object.entries(c.dados||{}).forEach(([k,v])=>{if(typeof v==='string'||typeof v==='number'){const el=document.getElementById(k);if(el&&!el.disabled)el.value=v}});
+    const maps={'cm-excl':['cmexcl-cli',null],'cm-abrt':['cmabrt-cli',null],'reserva':['reserva-prop','reserva-res'],'proposta':['proposta-vend','proposta-comp'],'cpcv':['cpcv-vend','cpcv-comp']};
+    const m=maps[c.tipo];const pd=c.dados?._partes||{};
+    if(m?.[0]&&pd[m[0]])ogRestoreSnapshot(m[0],pd[m[0]]);else if(m&&c.snapshot?.partes?.vendedores)ogRestoreSnapshot(m[0],{tipo:'singular',estadoCivil:'solteiro',outorgantes:c.snapshot.partes.vendedores,reps:[]});
+    if(m?.[1]&&pd[m[1]])ogRestoreSnapshot(m[1],pd[m[1]]);else if(m?.[1]&&c.snapshot?.partes?.compradores)ogRestoreSnapshot(m[1],{tipo:'singular',estadoCivil:'solteiro',outorgantes:c.snapshot.partes.compradores,reps:[]});
+    mostrarToast(c.estado==='finalizado'?'Base carregada para criar nova versão.':'Rascunho carregado.','info');
+  },250);
+};
+</script>
+
 </body>
 </html>
