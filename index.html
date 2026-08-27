@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LYVCMI — Back-office Sunvila</title>
+<title>LYVCMI — Back-office do mediador AMI</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -297,7 +297,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
     <div id="auth-tab-login">
       <div style="margin-bottom:1.2rem">
         <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Email</label>
-        <input id="auth-email" type="email" placeholder="hello@lyvantcapital.com"
+        <input id="auth-email" type="email" placeholder="email@agencia.pt"
           style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
       </div>
       <div style="margin-bottom:1.5rem">
@@ -310,8 +310,47 @@ input[disabled]{opacity:.55;cursor:not-allowed}
         Entrar
       </button>
       <div id="auth-error" style="display:none;margin-top:.75rem;padding:.6rem .9rem;background:#FCEBEB;color:#A32D2D;border-radius:8px;font-size:13px"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin:1rem 0 .85rem">
+        <div style="height:1px;background:var(--border-tertiary);flex:1"></div>
+        <span style="font-size:11px;color:var(--text-tertiary)">ou</span>
+        <div style="height:1px;background:var(--border-tertiary);flex:1"></div>
+      </div>
+      <button onclick="authShowRegister()" type="button"
+        style="width:100%;padding:.72rem;background:#fff;color:#0B1F3A;border:1px solid #0B1F3A;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">
+        Criar conta
+      </button>
       <div style="text-align:center;margin-top:1rem">
         <span onclick="authShowReset()" style="font-size:12px;color:var(--text-secondary);cursor:pointer;text-decoration:underline">Esqueci a password</span>
+      </div>
+    </div>
+
+    <!-- Tab registar -->
+    <div id="auth-tab-register" style="display:none">
+      <div style="font-size:16px;font-weight:650;color:#0B1F3A;margin-bottom:4px">Criar conta LYVCMI</div>
+      <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Cria o acesso principal da agência. Depois do registo, o onboarding recolhe os dados da agência e do utilizador uma única vez.</p>
+      <div style="margin-bottom:1.05rem">
+        <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Email</label>
+        <input id="auth-register-email" type="email" placeholder="nome@agencia.pt" autocomplete="email"
+          style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+      </div>
+      <div style="margin-bottom:1.05rem">
+        <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Password</label>
+        <input id="auth-register-password" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password"
+          style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+      </div>
+      <div style="margin-bottom:1.35rem">
+        <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Confirmar password</label>
+        <input id="auth-register-password2" type="password" placeholder="Repetir a password" autocomplete="new-password"
+          style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+      </div>
+      <button onclick="authRegister()" id="auth-register-btn"
+        style="width:100%;padding:.75rem;background:#0B1F3A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">
+        Registar agência
+      </button>
+      <div id="auth-register-error" style="display:none;margin-top:.75rem;padding:.6rem .9rem;background:#FCEBEB;color:#A32D2D;border-radius:8px;font-size:13px"></div>
+      <div id="auth-register-success" style="display:none;margin-top:.75rem;padding:.65rem .9rem;background:#EAF3DE;color:#3B6D11;border-radius:8px;font-size:13px;line-height:1.45"></div>
+      <div style="text-align:center;margin-top:1rem">
+        <span onclick="authShowLogin()" style="font-size:12px;color:var(--text-secondary);cursor:pointer;text-decoration:underline">← Já tenho conta</span>
       </div>
     </div>
 
@@ -320,7 +359,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
       <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1rem">Introduz o teu email — enviamos um link para definires uma nova password.</p>
       <div style="margin-bottom:1.2rem">
         <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Email</label>
-        <input id="auth-reset-email" type="email" placeholder="hello@lyvantcapital.com"
+        <input id="auth-reset-email" type="email" placeholder="email@agencia.pt"
           style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
       </div>
       <button onclick="authSendReset()"
@@ -334,7 +373,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
     </div>
 
     <div style="text-align:center;margin-top:1.5rem;font-size:11px;color:var(--text-secondary)">
-      LYVCMI · Acesso restrito · <a href="mailto:hello@lyvantcapital.com" style="color:var(--text-secondary)">Pedir acesso</a>
+      LYVCMI · Back-office do mediador AMI
     </div>
   </div>
 </div>
@@ -407,8 +446,8 @@ input[disabled]{opacity:.55;cursor:not-allowed}
   </div>
 
   <div class="sf" style="cursor:pointer" onclick="go('config','Perfil da Agência','Dados da mediadora · Seguro RC · Logotipo')">
-    <div class="av" id="sb-avatar">MF</div>
-    <div style="flex:1"><div class="avt" id="sb-nome">Marco Fernandes</div><div class="avs" id="sb-marca">Sunvila · AMI 25878</div></div>
+    <div class="av" id="sb-avatar">--</div>
+    <div style="flex:1"><div class="avt" id="sb-nome">Utilizador</div><div class="avs" id="sb-marca">Agência · AMI</div></div>
     <div style="display:flex;gap:4px;align-items:center">
       <i class="ti ti-settings" style="font-size:16px;color:var(--text-secondary)" title="Perfil"></i>
       <button onclick="event.stopPropagation();authLogout()" style="background:#A32D2D;border:none;color:#fff;border-radius:6px;cursor:pointer;padding:4px 8px;font-size:11px;font-weight:500" title="Sair">Sair</button>
@@ -546,7 +585,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
         <div class="sim-part">
           <div class="sim-pt">Distribuição da comissão</div>
           <div class="sim-pg">
-            <div class="spb"><div class="spl">A minha comissão (Sunvila)</div><div class="spv" id="r-minha">€ 10.507</div></div>
+            <div class="spb"><div class="spl">A minha comissão</div><div class="spv" id="r-minha">€ 10.507</div></div>
             <div class="spb"><div class="spl">Comissão outra agência</div><div class="spv" id="r-outra">€ 0</div></div>
           </div>
         </div>
@@ -689,7 +728,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid #e8e6e0;flex-shrink:0">
       <div>
         <div style="font-size:15px;font-weight:600;color:#1a1a1a" id="modal-title">Pré-visualização</div>
-        <div style="font-size:11.5px;color:#666;margin-top:2px" id="modal-subtitle">Sunvila Real Estate · AMI 25878</div>
+        <div style="font-size:11.5px;color:#666;margin-top:2px" id="modal-subtitle">Agência mediadora</div>
       </div>
       <div style="display:flex;gap:8px">
         <button type="button" id="modal-word-btn" class="btn p" onclick="gerarWordAtual()"><i class="ti ti-file-download"></i>Gerar Word</button>
@@ -1133,26 +1172,28 @@ Venho propor a partilha do negócio referente ao imóvel "${titulo}", nas seguin
 — Preço de venda: ${preco}
 — Comissão total (c/ IVA): ${ctotal}
 — Regime de partilha: ${partLabel}
-— Comissão Sunvila: ${minha}
+— Comissão ${agencia.marca||agencia.nome}: ${minha}
 — Comissão da vossa agência: ${outra}
 
 Fico disponível para esclarecer qualquer detalhe ou agendar uma chamada.
 
 Com os melhores cumprimentos,
-Marco Fernandes
-Sunvila Real Estate · AMI 25878`;
+${agenteAtual.nome||agencia.gerente||''}
+${agencia.marca||agencia.nome} · AMI ${agencia.ami}`;
 }
 
 /* ====================== MINUTAS / CONTRATOS ====================== */
-const pfCampos=`
+function pfCamposHtml(){
+  return `
 <div class="fg3">
-  <div class="ff"><label>Empresa</label><input class="pf" disabled value="Lyvant Capital, Unipessoal Limitada"></div>
-  <div class="ff"><label>NIF</label><input class="pf" disabled value="518837548"></div>
-  <div class="ff"><label>Licença AMI</label><input class="pf" disabled value="25878"></div>
-  <div class="ff full"><label>Sede social</label><input class="pf" disabled value="Av. dos Extremos, n.º 60, Cave, 4705-136 Braga"></div>
-  <div class="ff"><label>Seguro RC · Apólice</label><input class="pf" disabled value="A indicar"></div>
-  <div class="ff"><label>Seguradora</label><input class="pf" disabled value="Allianz (válido até 2026-07-09)"></div>
+  <div class="ff"><label>Empresa</label><input class="pf" disabled value="${v2Esc(agencia.nome||'')}"></div>
+  <div class="ff"><label>NIF</label><input class="pf" disabled value="${v2Esc(agencia.nif||'')}"></div>
+  <div class="ff"><label>Licença AMI</label><input class="pf" disabled value="${v2Esc(agencia.ami||'')}"></div>
+  <div class="ff full"><label>Sede social</label><input class="pf" disabled value="${v2Esc(agencia.morada||'')}"></div>
+  <div class="ff"><label>Seguro RC · Apólice</label><input class="pf" disabled value="${v2Esc(agencia.seguroApolice||'')}"></div>
+  <div class="ff"><label>Seguradora</label><input class="pf" disabled value="${v2Esc((agencia.seguradora||'')+(agencia.seguroValidade?' · válido até '+agencia.seguroValidade:''))}"></div>
 </div>`;
+}
 
 /* ====== MÓDULO DE OUTORGANTES DINÂMICOS ======
    Gera o bloco completo de identificação de uma parte (vendedor/proprietário OU comprador/proponente).
@@ -1356,7 +1397,7 @@ function condicoesCamposHtml(prefix){
 }
 
 const btnRow=(id)=>`<div class="btn-row" style="gap:8px;display:flex;justify-content:flex-end;margin-top:1rem"><button type="button" class="btn" onclick="guardarRascunho('${id}')"><i class="ti ti-device-floppy"></i>Guardar rascunho</button><button type="button" class="btn" onclick="preVisualizar('${id}')"><i class="ti ti-eye"></i>Pré-visualizar</button><button type="button" class="btn p" onclick="finalizarContrato('${id}')"><i class="ti ti-file-check"></i>Finalizar e guardar</button></div>`;
-const nota_lei=`<div class="nota inf"><i class="ti ti-info-circle"></i>Dados da Sunvila pré-preenchidos. Preencha os campos do cliente. Em produção: validação jurídica e depósito IMPIC (Portaria 228/2018).</div>`;
+const nota_lei=`<div class="nota inf"><i class="ti ti-info-circle"></i>Dados da agência pré-preenchidos. Preencha apenas os dados específicos do cliente e do negócio.</div>`;
 const nota_cpcv=`<div class="nota dan"><i class="ti ti-alert-triangle"></i>O CPCV tem força legal vinculativa. Incumprimento do vendedor: sinal em dobro. Incumprimento do comprador: perde o sinal (art. 442º CC). Sempre com revisão jurídica.</div>`;
 
 /* ====================== LIGAÇÃO CARTEIRA → CONTRATOS ======================
@@ -1590,15 +1631,15 @@ function renderForm(id){
   let initPrefixes=[];
   if(id==='cm-excl'){
     html=nota_lei+
-    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Dados da empresa mediadora</div>${pfCampos}</div>`+
+    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Dados da empresa mediadora</div>${pfCamposHtml()}</div>`+
     outorgantesBlock('cmexcl-cli','Dados do cliente (proprietário)','ti-user')+
     `<div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Dados do imóvel</div>${imovelCamposHtml('cmexcl-im')}</div>`+
-    `<div class="form-card"><div class="fc-title"><i class="ti ti-coin"></i>Condições do contrato</div>${condicoesCamposHtml('cmexcl-cond')}<div class="excl-box e"><strong>Cláusula de exclusividade (art. 16º Lei 15/2013):</strong> Durante a vigência, o proprietário não pode celebrar contratos com outras agências nem promover a venda por meios próprios. Qualquer negócio concretizado com comprador apresentado por outra mediadora implica pagamento da comissão à Lyvant Capital.</div></div>`+
+    `<div class="form-card"><div class="fc-title"><i class="ti ti-coin"></i>Condições do contrato</div>${condicoesCamposHtml('cmexcl-cond')}<div class="excl-box e"><strong>Cláusula de exclusividade (art. 16º Lei 15/2013):</strong> Durante a vigência, o proprietário não pode celebrar contratos com outras agências nem promover a venda por meios próprios. Qualquer negócio concretizado nas condições previstas no contrato fica sujeito ao regime de remuneração acordado com a empresa mediadora.</div></div>`+
     portfolioSaveBlock('cmexcl')+btnRow('cm-excl');
     initPrefixes=['cmexcl-cli'];
   } else if(id==='cm-abrt'){
     html=nota_lei+
-    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Dados da empresa mediadora</div>${pfCampos}</div>`+
+    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Dados da empresa mediadora</div>${pfCamposHtml()}</div>`+
     outorgantesBlock('cmabrt-cli','Dados do cliente (proprietário)','ti-user')+
     `<div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Dados do imóvel</div>${imovelCamposHtml('cmabrt-im')}</div>`+
     `<div class="form-card"><div class="fc-title"><i class="ti ti-coin"></i>Condições do contrato</div>${condicoesCamposHtml('cmabrt-cond')}<div class="excl-box a"><strong>Regime não exclusivo:</strong> O proprietário pode celebrar contratos com outras agências e promover a venda por meios próprios. A comissão é devida apenas à agência que apresentar o comprador que concretize o negócio.</div></div>`+
@@ -1607,7 +1648,7 @@ function renderForm(id){
   } else if(id==='reserva'){
     html=nota_lei+
     `<div class="nota wrn"><i class="ti ti-info-circle"></i>A reserva é pré-contratual. O sinal só é não reembolsável se expressamente previsto. Para vinculação plena, use o CPCV.</div>`+
-    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência (pré-preenchido)</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="Lyvant Capital, Unipessoal Limitada"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="25878"></div><div class="ff"><label>NIF</label><input class="pf" disabled value="518837548"></div></div></div>`+
+    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência (pré-preenchido)</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="${v2Esc(agencia.nome||'')}"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="${v2Esc(agencia.ami||'')}"></div><div class="ff"><label>NIF</label><input class="pf" disabled value="${v2Esc(agencia.nif||'')}"></div></div></div>`+
     portfolioSelectorBlock('reserva-im','Imóvel da reserva')+
     `<div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Dados do imóvel</div>${imovelCamposHtml('reserva-im')}</div>`+
     outorgantesBlock('reserva-prop','Proprietário(s) do imóvel','ti-user')+
@@ -1616,7 +1657,7 @@ function renderForm(id){
     initPrefixes=['reserva-prop','reserva-res'];
   } else if(id==='proposta'){
     html=nota_lei+
-    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência (pré-preenchido)</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="Lyvant Capital, Unipessoal Limitada"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="25878"></div><div class="ff"><label>Consultor responsável</label><input placeholder="Nome do agente"></div></div></div>`+
+    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência (pré-preenchido)</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="${v2Esc(agencia.nome||'')}"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="${v2Esc(agencia.ami||'')}"></div><div class="ff"><label>Consultor responsável</label><input id="proposta-consultor" value="${v2Esc(agenteAtual.nome||'')}" placeholder="Nome do agente"></div></div></div>`+
     portfolioSelectorBlock('proposta-im','Imóvel objeto da proposta')+
     `<div class="form-card"><div class="fc-title"><i class="ti ti-home"></i>Dados do imóvel</div>${imovelCamposHtml('proposta-im')}</div>`+
     outorgantesBlock('proposta-vend','Vendedor(es) / proprietário(s)','ti-user')+
@@ -1625,7 +1666,7 @@ function renderForm(id){
     initPrefixes=['proposta-vend','proposta-comp'];
   } else if(id==='cpcv'){
     html=nota_cpcv+
-    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência mediadora (pré-preenchido)</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="Lyvant Capital, Unipessoal Limitada"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="25878"></div><div class="ff"><label>NIF</label><input class="pf" disabled value="518837548"></div></div></div>`+
+    `<div class="form-card"><div class="fc-title"><i class="ti ti-building"></i>Agência mediadora (pré-preenchido)</div><div class="fg3"><div class="ff"><label>Empresa</label><input class="pf" disabled value="${v2Esc(agencia.nome||'')}"></div><div class="ff"><label>AMI</label><input class="pf" disabled value="${v2Esc(agencia.ami||'')}"></div><div class="ff"><label>NIF</label><input class="pf" disabled value="${v2Esc(agencia.nif||'')}"></div></div></div>`+
     portfolioSelectorBlock('cpcv-im','Imóvel prometido vender')+
     outorgantesBlock('cpcv-vend','Promitentes vendedores (1ºs outorgantes)','ti-users')+
     outorgantesBlock('cpcv-comp','Promitentes compradores (2ºs outorgantes)','ti-users')+
@@ -1910,7 +1951,7 @@ ${docH2(8,'Foro e lei aplicável')}
 /* Cabeçalho reutilizável com logo SVG */
 function docHeader(){
   const ag=agencia;
-  // Logo real da Sunvila Real Estate
+  // Usa o logótipo configurado pela agência; se não existir, mostra LYVCMI
   const logoImg=ag.logo
     ?`<img src="${ag.logo}" alt="${ag.marca||ag.nome}" style="height:52px;display:block">`
     :`<svg width="120" height="26" viewBox="0 0 120 26" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2468,7 +2509,7 @@ function gerarWordAtual(){
 /* Geração de Word via docx.js (CDN) */
 function gerarWord(id){
   const titulos={'cm-excl':'Contrato_Mediacao_Exclusivo','cm-abrt':'Contrato_Mediacao_Nao_Exclusivo','reserva':'Reserva_Imovel','proposta':'Proposta_Compra','cpcv':'CPCV'};
-  const nomeFile=(titulos[id]||'Documento')+'_Sunvila.docx';
+  const nomeFile=(titulos[id]||'Documento')+'_'+(agencia.marca||agencia.nome||'LYVCMI').replace(/[^a-z0-9]+/gi,'_')+'.docx';
   const d=recolherDados(id);
 
   // Verifica se docx está disponível
@@ -2502,7 +2543,7 @@ function gerarWord(id){
     alignment:AlignmentType.CENTER,spacing:{after:80}
   }));
   secs.push(new Paragraph({
-    children:[new TextRun({text:'Sunvila Real Estate (Lyvant Capital) · NIF 518837548 · Lic. AMI 25878 · Braga',size:20,color:'666666'})],
+    children:[new TextRun({text:`${agencia.marca||agencia.nome} · ${agencia.nome} · NIF ${agencia.nif} · Lic. AMI ${agencia.ami}`,size:20,color:'666666'})],
     alignment:AlignmentType.CENTER,spacing:{after:280}
   }));
 
@@ -2531,12 +2572,12 @@ function gerarWord(id){
     secs.push(h('6. Sinal e Incumprimento'));
     secs.push(p('Em caso de incumprimento imputável aos 1.ºs outorgantes, estes restituirão em dobro o sinal recebido. Em caso de incumprimento imputável aos 2.ºs outorgantes, perderão o sinal entregue (art. 442.º do Código Civil).'));
     secs.push(h('7. Mediação Imobiliária'));
-    secs.push(p('O presente contrato foi intermediado pela Lyvant Capital, Unipessoal Limitada (Sunvila Real Estate), NIF 518837548, titular da licença AMI n.º 25878.'));
+    secs.push(p(`O presente contrato foi intermediado pela ${agencia.nome}, ${agencia.marca?agencia.marca+', ':''}NIF ${agencia.nif}, titular da licença AMI n.º ${agencia.ami}.`));
   } else if(id==='cm-excl'||id==='cm-abrt'){
     const vend=d._outorgantes_vend||[];
     const excl=id==='cm-excl';
     secs.push(h('1. Identificação das Partes'));
-    secs.push(new Paragraph({children:[bold('Empresa Mediadora: '),new TextRun({text:'Sunvila Real Estate (Lyvant Capital), NIF 518837548, AMI 25878, Av. dos Extremos 60, Braga.',size:24})],spacing:{after:100}}));
+    secs.push(new Paragraph({children:[bold('Empresa Mediadora: '),new TextRun({text:`${agencia.marca||agencia.nome} (${agencia.nome}), NIF ${agencia.nif}, AMI ${agencia.ami}, ${agencia.morada}.`,size:24})],spacing:{after:100}}));
     vend.forEach((v,i)=>{
       secs.push(new Paragraph({children:[bold(`Proprietário${vend.length>1?' '+(i+1):''}: `),new TextRun({text:`${v.nome||'___'}, doc. n.º ${v.doc||'___'}, NIF ${v.nif||'___'}, residente em ${v.morada||'___'}.`,size:24})],spacing:{after:100}}));
     });
@@ -2559,7 +2600,7 @@ function gerarWord(id){
     const prop=d._outorgantes_vend||[];
     const res=d._outorgantes_comp||[];
     secs.push(h('1. Partes'));
-    secs.push(p(`Agência: Lyvant Capital / Sunvila Real Estate, NIF 518837548, AMI 25878.`));
+    secs.push(p(`Agência: ${agencia.marca||agencia.nome} / ${agencia.nome}, NIF ${agencia.nif}, AMI ${agencia.ami}.`));
     prop.forEach((v,i)=>secs.push(new Paragraph({children:[bold(`Proprietário${prop.length>1?' '+(i+1):''}: `),new TextRun({text:`${v.nome||'___'}, NIF ${v.nif||'___'}.`,size:24})],spacing:{after:80}})));
     res.forEach((v,i)=>secs.push(new Paragraph({children:[bold(`Reservante${res.length>1?' '+(i+1):''}: `),new TextRun({text:`${v.nome||'___'}, NIF ${v.nif||'___'}, residente em ${v.morada||'___'}.`,size:24})],spacing:{after:80}})));
     secs.push(h('2. Imóvel'));
@@ -2922,10 +2963,56 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 function authShowLogin(){
   document.getElementById('auth-tab-login').style.display='block';
   document.getElementById('auth-tab-reset').style.display='none';
+  const reg=document.getElementById('auth-tab-register'); if(reg)reg.style.display='none';
 }
 function authShowReset(){
   document.getElementById('auth-tab-login').style.display='none';
   document.getElementById('auth-tab-reset').style.display='block';
+  const reg=document.getElementById('auth-tab-register'); if(reg)reg.style.display='none';
+}
+function authShowRegister(){
+  document.getElementById('auth-tab-login').style.display='none';
+  document.getElementById('auth-tab-reset').style.display='none';
+  document.getElementById('auth-tab-register').style.display='block';
+  const src=document.getElementById('auth-email')?.value?.trim();
+  if(src)document.getElementById('auth-register-email').value=src;
+}
+
+async function authRegister(){
+  const email=document.getElementById('auth-register-email').value.trim();
+  const password=document.getElementById('auth-register-password').value;
+  const password2=document.getElementById('auth-register-password2').value;
+  const btn=document.getElementById('auth-register-btn');
+  const err=document.getElementById('auth-register-error');
+  const ok=document.getElementById('auth-register-success');
+  err.style.display='none'; ok.style.display='none';
+  if(!email){err.textContent='Indica um email válido.';err.style.display='block';return;}
+  if(password.length<8){err.textContent='A password deve ter pelo menos 8 caracteres.';err.style.display='block';return;}
+  if(password!==password2){err.textContent='As passwords não coincidem.';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='A criar conta...';
+  try{
+    const {data,error}=await supa.auth.signUp({
+      email,password,
+      options:{emailRedirectTo:'https://www.lyvcmi.com'}
+    });
+    if(error)throw error;
+    if(data?.session){
+      ok.textContent='Conta criada. A abrir a configuração inicial da agência...';
+      ok.style.display='block';
+      // onAuthStateChange abre a aplicação e o onboarding automaticamente.
+    }else{
+      ok.textContent='Conta criada. Enviámos um email de confirmação. Confirma o email e depois entra no LYVCMI para concluir a configuração da agência.';
+      ok.style.display='block';
+      document.getElementById('auth-register-password').value='';
+      document.getElementById('auth-register-password2').value='';
+    }
+  }catch(e){
+    const msg=e?.message||String(e);
+    err.textContent=msg.includes('already registered')?'Este email já tem uma conta. Usa “Já tenho conta” ou recupera a password.':msg;
+    err.style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='Registar agência';
+  }
 }
 
 async function authLogin(){
@@ -3189,7 +3276,7 @@ function v2EnsureOnboardingDOM(){
     <div style="padding:26px">
       <div class="ob-step" data-step="1">
         <div style="font-size:17px;font-weight:650;margin-bottom:4px">A agência</div><div style="font-size:12px;color:#777;margin-bottom:18px">Informação legal que aparecerá nos documentos.</div>
-        <div class="fg"><div class="ff full"><label>Nome legal *</label><input id="ob-nome" placeholder="Denominação social"></div><div class="ff"><label>Marca comercial *</label><input id="ob-marca" placeholder="Ex: Sunvila Real Estate"></div><div class="ff"><label>NIF *</label><input id="ob-nif" placeholder="000000000"></div><div class="ff"><label>Licença AMI *</label><input id="ob-ami" placeholder="Ex: 25878"></div><div class="ff"><label>Telefone</label><input id="ob-telefone"></div><div class="ff full"><label>Sede *</label><input id="ob-morada" placeholder="Morada completa"></div><div class="ff full"><label>Email geral</label><input id="ob-email" type="email"></div></div>
+        <div class="fg"><div class="ff full"><label>Nome legal *</label><input id="ob-nome" placeholder="Denominação social"></div><div class="ff"><label>Marca comercial *</label><input id="ob-marca" placeholder="Ex: Agência Imobiliária"></div><div class="ff"><label>NIF *</label><input id="ob-nif" placeholder="000000000"></div><div class="ff"><label>Licença AMI *</label><input id="ob-ami" placeholder="Ex: 12345"></div><div class="ff"><label>Telefone</label><input id="ob-telefone"></div><div class="ff full"><label>Sede *</label><input id="ob-morada" placeholder="Morada completa"></div><div class="ff full"><label>Email geral</label><input id="ob-email" type="email"></div></div>
       </div>
       <div class="ob-step" data-step="2" style="display:none">
         <div style="font-size:17px;font-weight:650;margin-bottom:4px">O utilizador principal</div><div style="font-size:12px;color:#777;margin-bottom:18px">Este será o primeiro administrador/agente. Depois poderás adicionar mais utilizadores.</div>
@@ -3293,6 +3380,12 @@ async function v2ApplyAgencia(row){
 
 authLoadAgencia=async function(userId){
   v2EnsureOnboardingDOM();
+  // Nunca reutilizar dados de outra sessão/utilizador. Supabase é a fonte única.
+  localStorage.removeItem('lyvcmi_agencia');
+  currentAgenciaId=null;
+  agenteAtual={id:null,user_id:userId,nome:'',nif:'',email:'',telefone:'',cargo:'',role:'admin'};
+  Object.keys(agencia).forEach(k=>{ if(k!=='_logoTemp') agencia[k]=''; });
+  cfgUpdateSidebar();
   try{
     let membership=null;
     const m=await supa.from('agencia_users').select('*').eq('user_id',userId).eq('ativo',true).limit(1).maybeSingle();
@@ -3330,11 +3423,17 @@ cfgUpdateSidebar=function(){
   _cfgUpdateSidebarV1();
   const nomeEl=document.getElementById('sb-nome');
   if(nomeEl&&agenteAtual?.nome)nomeEl.textContent=agenteAtual.nome;
+  const ms=document.getElementById('modal-subtitle');
+  if(ms)ms.textContent=(agencia.marca||agencia.nome||'Agência mediadora')+(agencia.ami?' · AMI '+agencia.ami:'');
 };
 
 const _cfgSaveV1=cfgSave;
 cfgSave=async function(){
-  _cfgSaveOrig();
+  // Supabase é a fonte única; não guardar dados da agência em localStorage.
+  CFG_FIELDS.forEach(k=>{const el=document.getElementById('cfg-'+k);if(el)agencia[k]=el.value.trim();});
+  if(agencia._logoTemp!==undefined){agencia.logo=agencia._logoTemp;delete agencia._logoTemp;}
+  localStorage.removeItem('lyvcmi_agencia');
+  cfgUpdateSidebar();
   if(!currentAgenciaId)return;
   try{
     let logoPath=null;
