@@ -168,10 +168,10 @@ tr:hover td{background:var(--surface2)}
 .auth-sub{font-size:12px;color:var(--text3);margin-top:4px}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;padding:.75rem 1.25rem;border-radius:var(--radius);font-size:13px;z-index:9998;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;padding:.75rem 1.25rem;border-radius:var(--radius);font-size:13px;z-index:9998;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:opacity .2s}
 .toast.on{display:flex}
-.toast.success{background:var(--green)}
-.toast.error{background:var(--red)}
+.toast.on.success{background:var(--green)}
+.toast.on.error{background:var(--red)}
 
 /* ── PERFIL ── */
 .toggle-btns{display:flex;gap:0;border:0.5px solid var(--border2);border-radius:var(--radius);overflow:hidden;width:100%}
@@ -954,10 +954,12 @@ function toggleDoc(ref,idx){
 }
 function populateImovSelects(){
   const refs=Object.keys(fichas);
-  ['mv-imovel'].forEach(id=>{
-    const sel=document.getElementById(id);
-    if(!sel)return;
-    sel.innerHTML='<option value="">-- Selecionar --</option>'+refs.map(r=>`<option value="${r}">${fichas[r].title}</option>`).join('');
+  const opts='<option value="">— Preencher manualmente —</option>'+refs.map(r=>`<option value="${r}">${fichas[r].title}</option>`).join('');
+  // Actualizar todos os selects de imóvel nos formulários
+  document.querySelectorAll('[id$="-im-sel"],[id="mv-imovel"]').forEach(sel=>{
+    const cur=sel.value;
+    sel.innerHTML=sel.id==='mv-imovel'?'<option value="">-- Selecionar --</option>'+refs.map(r=>`<option value="${r}">${fichas[r].title}</option>`).join(''):opts;
+    if(cur)sel.value=cur;
   });
 }
 function criarDocDeImovel(tipo,imovelRef){
@@ -1083,8 +1085,9 @@ function renderFormDoc(tipo){
   el.innerHTML=`
   <div class="doc-estado-bar" style="margin-bottom:1rem">
     <span class="bdg a">Rascunho</span>
-    <span style="color:var(--text2);font-size:12px;margin-left:.5rem">Preenche os campos e clica em Pré-visualizar</span>
+    <span style="color:var(--text2);font-size:12px;margin-left:.5rem">Preenche os campos e grava o rascunho ou pré-visualiza o documento</span>
     <div style="margin-left:auto;display:flex;gap:.5rem">
+      <button class="btn sm" onclick="guardarRascunho('${tipo}')"><i class="ti ti-device-floppy" aria-hidden="true"></i>Guardar rascunho</button>
       <button class="btn sm primary" onclick="preVisualizarDoc('${tipo}')"><i class="ti ti-eye" aria-hidden="true"></i>Pré-visualizar</button>
     </div>
   </div>
@@ -1117,17 +1120,77 @@ function renderFormDoc(tipo){
           ${Object.values(fichas).map(f=>`<option value="${f.ref}">${f.title}</option>`).join('')}
         </select>
       </div>
-      <div class="ff full"><label>Morada do imóvel</label><input id="${prefix}-im-morada" placeholder="Rua, nº, código postal, freguesia, concelho"></div>
-      <div class="ff"><label>Artigo matricial</label><input id="${prefix}-im-artigo" placeholder="Ex: 2255 · Palmeira"></div>
-      <div class="ff"><label>Descrição predial (nº)</label><input id="${prefix}-im-descpred" placeholder="Nº registo conservatória"></div>
+      <div class="ff full"><label>Morada completa <span style="color:var(--red)">*</span></label><input id="${prefix}-im-morada" placeholder="Rua, nº, código postal, freguesia, concelho"></div>
+      <div class="ff"><label>Artigo matricial <span style="color:var(--red)">*</span></label><input id="${prefix}-im-artigo" placeholder="Ex: U-2255 · Braga"></div>
+      <div class="ff"><label>Descrição predial (CRP) <span style="color:var(--red)">*</span></label><input id="${prefix}-im-descpred" placeholder="Nº registo na conservatória"></div>
+      <div class="ff"><label>Freguesia e concelho <span style="color:var(--red)">*</span></label><input id="${prefix}-im-freguesia" placeholder="Ex: Braga (Maximinos)"></div>
       <div class="ff"><label>Tipologia</label>
         <select id="${prefix}-im-tipologia"><option>T0</option><option>T1</option><option selected>T2</option><option>T3</option><option>T4</option><option>T4+</option><option>Moradia</option><option>Terreno</option><option>Comercial</option></select>
       </div>
       <div class="ff"><label>Finalidade</label>
         <select id="${prefix}-im-finalidade"><option>Compra e venda</option><option>Arrendamento</option><option>Arrendamento c/ opção de compra</option></select>
       </div>
-      <div class="ff"><label>Ónus / encargos</label><input id="${prefix}-im-onus" placeholder="Ex: hipoteca Banco X, penhora..."></div>
-      <div class="ff"><label>Valor pedido (€)</label><input id="${prefix}-im-valor" type="number" placeholder="0.00"></div>
+      <div class="ff"><label>Valor pedido (€) <span style="color:var(--red)">*</span></label><input id="${prefix}-im-valor" type="number" placeholder="0.00"></div>
+      <div class="ff full"><label>Ónus e encargos <span style="color:var(--red)">*</span></label><input id="${prefix}-im-onus" placeholder="Ex: hipoteca Banco X AP. 123/2020, penhora... (ou: livre de quaisquer ónus)"></div>
+    </div>
+
+    <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border2)">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem">Documentação legal do imóvel</div>
+      <div class="fg">
+        <div class="ff"><label>Certificado energético <span style="color:var(--red)">*</span></label>
+          <div style="display:flex;gap:.5rem">
+            <select id="${prefix}-im-ce-estado" style="width:140px">
+              <option value="emitido">Emitido</option>
+              <option value="solicitado">Solicitado</option>
+              <option value="dispensado">Dispensado por lei</option>
+              <option value="pendente">Pendente</option>
+            </select>
+            <input id="${prefix}-im-ce-num" placeholder="Nº SCE (ex: CE-123456)" style="flex:1">
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">DL 118/2013 · obrigatório para venda e arrendamento</div>
+        </div>
+        <div class="ff"><label>Classe energética</label>
+          <select id="${prefix}-im-ce-classe">
+            <option value="">— Selecionar —</option>
+            <option>A+</option><option>A</option><option>B</option><option>B-</option><option>C</option><option>D</option><option>E</option><option>F</option>
+          </select>
+        </div>
+        <div class="ff"><label>Licença de utilização / habitação</label>
+          <div style="display:flex;gap:.5rem">
+            <select id="${prefix}-im-lu-estado" style="width:140px">
+              <option value="tem">Tem</option>
+              <option value="anterior1951">Anterior a 1951 (dispensada)</option>
+              <option value="pendente">Pendente</option>
+              <option value="na">N/A</option>
+            </select>
+            <input id="${prefix}-im-lu-num" placeholder="Nº e data" style="flex:1">
+          </div>
+        </div>
+        <div class="ff"><label>Ficha técnica de habitação</label>
+          <select id="${prefix}-im-fth">
+            <option value="tem">Tem</option>
+            <option value="anterior2004">Anterior a 2004 (dispensada)</option>
+            <option value="pendente">Pendente</option>
+            <option value="na">N/A</option>
+          </select>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">DL 68/2004 · imóveis construídos após Mar/2004</div>
+        </div>
+        <div class="ff"><label>Caderneta predial</label>
+          <select id="${prefix}-im-cp">
+            <option value="tem">Tem (actualizada)</option>
+            <option value="pendente">Pendente</option>
+          </select>
+        </div>
+        <div class="ff"><label>Certidão permanente (CRP)</label>
+          <div style="display:flex;gap:.5rem">
+            <select id="${prefix}-im-crp-estado" style="width:140px">
+              <option value="tem">Tem</option>
+              <option value="pendente">Pendente</option>
+            </select>
+            <input id="${prefix}-im-crp-cod" placeholder="Código de acesso (ex: 7417-...)" style="flex:1">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1140,6 +1203,14 @@ function renderFormDoc(tipo){
       </div>
       <div class="ff"><label>Data de início</label><input id="${prefix}-cond-datainicio" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
       <div class="ff"><label>Angariador (nome)</label><input id="${prefix}-angariador" placeholder="Nome do angariador"></div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;position:sticky;bottom:0;box-shadow:0 -4px 20px rgba(0,0,0,.06)">
+    <span style="font-size:12px;color:var(--text3)"><i class="ti ti-info-circle" aria-hidden="true"></i> Guarda o rascunho para não perder os dados, ou pré-visualiza para ver o documento gerado.</span>
+    <div style="display:flex;gap:.75rem;flex-shrink:0">
+      <button class="btn" onclick="guardarRascunho('${tipo}')"><i class="ti ti-device-floppy" aria-hidden="true"></i>Guardar rascunho</button>
+      <button class="btn primary" onclick="preVisualizarDoc('${tipo}')"><i class="ti ti-eye" aria-hidden="true"></i>Pré-visualizar documento</button>
     </div>
   </div>
   `;
@@ -1178,6 +1249,29 @@ function renderOutorgantesUI(key){
   </div>`;
 }
 function renderOutorgantCard(key,o,i,st){
+  const isColetiva=st.tipo==='coletiva';
+  if(isColetiva){
+    return`<div class="outorgante-card">
+      <div class="outorgante-num">Pessoa coletiva</div>
+      <div class="fg">
+        <div class="ff full"><label>Denominação social</label><input value="${o.nome||''}" oninput="ogUpdate('${key}',${i},'nome',this.value)" placeholder="Nome da empresa / entidade"></div>
+        <div class="ff"><label>NIPC (NIF)</label><input value="${o.nif||''}" oninput="ogUpdate('${key}',${i},'nif',this.value)" placeholder="Número de identificação de pessoa coletiva"></div>
+        <div class="ff"><label>Conservatória / Registo Comercial</label><input value="${o.conservatoria||''}" oninput="ogUpdate('${key}',${i},'conservatoria',this.value)" placeholder="Ex: Conservatória de Braga, matrícula nº..."></div>
+        <div class="ff full"><label>Sede social</label><input value="${o.morada||''}" oninput="ogUpdate('${key}',${i},'morada',this.value)" placeholder="Morada completa da sede"></div>
+      </div>
+      <div style="margin-top:.75rem;padding-top:.75rem;border-top:0.5px solid var(--border2)">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Representante legal</div>
+        <div class="fg">
+          <div class="ff"><label>Nome do representante</label><input value="${o.repNome||''}" oninput="ogUpdate('${key}',${i},'repNome',this.value)" placeholder="Nome completo"></div>
+          <div class="ff"><label>Cargo</label><input value="${o.repCargo||''}" oninput="ogUpdate('${key}',${i},'repCargo',this.value)" placeholder="Ex: Gerente, Administrador, Procurador"></div>
+          <div class="ff"><label>NIF do representante</label><input value="${o.repNif||''}" oninput="ogUpdate('${key}',${i},'repNif',this.value)" placeholder="NIF pessoal"></div>
+          <div class="ff"><label>Doc. de identificação</label><input value="${o.repDoc||''}" oninput="ogUpdate('${key}',${i},'repDoc',this.value)" placeholder="CC nº e validade / Passaporte"></div>
+          <div class="ff full"><label>Poderes (título de representação)</label><input value="${o.repPoderes||''}" oninput="ogUpdate('${key}',${i},'repPoderes',this.value)" placeholder="Ex: Estatutos · Art. X · Deliberação de..."></div>
+        </div>
+      </div>
+      ${i>0?`<button class="btn sm danger" onclick="ogRemove('${key}',${i})" style="margin-top:.5rem"><i class="ti ti-trash" aria-hidden="true"></i>Remover</button>`:''}
+    </div>`;
+  }
   return`<div class="outorgante-card">
     <div class="outorgante-num">Outorgante ${i+1}${i===1&&st.estadoCivil==='casado'?' (cônjuge)':''}</div>
     <div class="fg">
@@ -1185,6 +1279,7 @@ function renderOutorgantCard(key,o,i,st){
       <div class="ff"><label>NIF</label><input value="${o.nif||''}" oninput="ogUpdate('${key}',${i},'nif',this.value)" placeholder="000000000"></div>
       <div class="ff full"><label>Doc. de identificação</label><input value="${o.doc||''}" oninput="ogUpdate('${key}',${i},'doc',this.value)" placeholder="CC / Passaporte · nº e validade"></div>
       <div class="ff full"><label>Morada</label><input value="${o.morada||''}" oninput="ogUpdate('${key}',${i},'morada',this.value)" placeholder="Morada completa"></div>
+      ${st.estadoCivil==='casado'&&i===0?`<div class="ff"><label>Regime de bens</label><input value="${o.regime||''}" oninput="ogUpdate('${key}',${i},'regime',this.value)" placeholder="Ex: Comunhão de adquiridos"></div><div class="ff"><label>Ordenamento jurídico</label><input value="${o.ordenamento||''}" oninput="ogUpdate('${key}',${i},'ordenamento',this.value)" placeholder="Ex: Direito português"></div>`:''}
     </div>
     ${i>0?`<button class="btn sm danger" onclick="ogRemove('${key}',${i})" style="margin-top:.5rem"><i class="ti ti-trash" aria-hidden="true"></i>Remover</button>`:''}
   </div>`;
@@ -1228,11 +1323,51 @@ function preVisualizarDoc(tipo){
   const prefix=prefixMap[tipo]||tipo;
   const tipoReal=tipo==='cmexcl'?'cm-excl':tipo==='cmabrt'?'cm-abrt':tipo;
   const d=recolherDadosForm(prefix);
-  // Garantir outorgantes do estado
   const stCli=window.outorgantesState?.[prefix+'-cli'];
   if(stCli)d._outorgantes_vend=stCli.outorgantes||[];
   const stComp=window.outorgantesState?.[prefix+'-comp'];
   if(stComp)d._outorgantes_comp=stComp.outorgantes||[];
+
+  const morada=d[prefix+'-im-morada']||'';
+  const tipologia=d[prefix+'-im-tipologia']||'T2';
+  const preco=parseFloat(d[prefix+'-im-valor'])||0;
+  const regime=tipo==='cmexcl'?'Exclusivo':'Não exclusivo';
+  const onus=d[prefix+'-im-onus']||'';
+  const artigo=d[prefix+'-im-artigo']||'';
+  const descpred=d[prefix+'-im-descpred']||'';
+  const vend=d._outorgantes_vend||[];
+  const proprietario=vend[0]?.nome||vend[0]?.repNome||'';
+
+  // Se é CMI, criar ou actualizar imóvel na carteira automaticamente
+  let imovelRef=d[prefix+'-im-sel']||d._imovelRef||'';
+  if((tipo==='cmexcl'||tipo==='cmabrt')&&morada){
+    if(imovelRef&&fichas[imovelRef]){
+      // Actualizar imóvel existente
+      const f=fichas[imovelRef];
+      f.morada=morada||f.morada;
+      f.proprietario=proprietario||f.proprietario;
+      f.tipologia=tipologia||f.tipologia;
+      f.regime=regime;
+      f.preco=preco||f.preco;
+      f.onus=onus||f.onus;
+      f.artigo=artigo||f.artigo;
+      f.descpred=descpred||f.descpred;
+      f.title=`${imovelRef} — ${f.morada}`;
+    } else {
+      // Criar novo imóvel automaticamente
+      const ref='IM'+String(fichaSeq++).padStart(3,'0');
+      fichas[ref]={ref,title:`${ref} — ${morada}`,morada,proprietario,tipologia,regime,estado:'ativo',preco,onus,artigo,descpred,comissaoRecebida:0,
+        docs:[{n:'Caderneta predial',s:'miss'},{n:'Certidão permanente',s:'miss'},{n:'Licença de utilização',s:'miss'},{n:'Certificado energético',s:'miss'},{n:'Ficha técnica',s:'miss'},{n:'Doc. identidade (prop.)',s:'miss'},{n:'Declaração não dívidas AT',s:'miss'},{n:'Planta do imóvel',s:'miss'}],
+        visitas:[],documentos:[]};
+      imovelRef=ref;
+      // Actualizar selector no formulário
+      const sel=document.getElementById(prefix+'-im-sel');
+      if(sel){const opt=document.createElement('option');opt.value=ref;opt.textContent=fichas[ref].title;opt.selected=true;sel.appendChild(opt);}
+      populateImovSelects();
+      renderDash();
+      showToast('Imóvel '+ref+' criado automaticamente na carteira','success');
+    }
+  }
 
   let html='';
   try{
@@ -1244,19 +1379,28 @@ function preVisualizarDoc(tipo){
     else if(tipo==='partilha')html=templatePartilha(d);
   }catch(e){html='<p style="color:red">Erro ao gerar documento: '+e.message+'</p>';}
 
-  // Guardar na biblioteca como rascunho
-  const imovelRef=d[prefix+'-im-sel']||d._imovelRef||'';
-  const morada=d[prefix+'-im-morada']||'';
-  const vend=d._outorgantes_vend||[];
-  const partes=vend.map(v=>v.nome).filter(Boolean).join(', ')||'—';
+  const partes=vend.map(v=>v.nome||v.repNome).filter(Boolean).join(', ')||'—';
   const titulo=`${TIPO_LABELS[tipoReal]||tipo} — ${morada||'Sem morada'}`;
-  const existe=bibDB.find(b=>b.tipo===tipoReal&&b.estado==='rascunho'&&b.imovelRef===imovelRef&&b.partes===partes);
+
+  // Guardar/actualizar na biblioteca
+  const existeId=docAtual?.id;
+  const existeDoc=existeId?bibDB.find(b=>b.id===existeId):null;
   let docId;
-  if(existe){existe.html=html;existe.dados=d;existe.titulo=titulo;existe.data=new Date().toISOString();docId=existe.id;
-  }else{docId=bibSeq++;bibDB.push({id:docId,tipo:tipoReal,titulo,partes,morada,imovelRef,estado:'rascunho',html,dados:d,data:new Date().toISOString()});}
+  if(existeDoc){
+    existeDoc.html=html;existeDoc.dados=d;existeDoc.titulo=titulo;existeDoc.partes=partes;existeDoc.imovelRef=imovelRef;existeDoc.data=new Date().toISOString();docId=existeDoc.id;
+  }else{
+    docId=bibSeq++;
+    bibDB.push({id:docId,tipo:tipoReal,titulo,partes,morada,imovelRef,estado:'rascunho',html,dados:d,data:new Date().toISOString()});
+  }
   docAtual={id:docId,tipo:tipoReal,formTipo:tipo};
 
-  // Ir para a página de visualização
+  // Associar documento ao imóvel
+  if(imovelRef&&fichas[imovelRef]){
+    if(!fichas[imovelRef].documentos)fichas[imovelRef].documentos=[];
+    if(!fichas[imovelRef].documentos.includes(docId))fichas[imovelRef].documentos.push(docId);
+  }
+
+  // Navegar para visualização
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('pg-doc').classList.add('on');
@@ -1285,21 +1429,47 @@ function verDoc(id){
   el('doc-btn-finalizar').style.display=b.estado==='finalizado'?'none':'';
   el('doc-content').innerHTML=`<div class="doc-wrap">${b.html}</div>`;
 }
+function guardarRascunho(tipo){
+  const prefixMap={cmexcl:'cmexcl',cmabrt:'cmabrt',reserva:'reserva',proposta:'proposta',cpcv:'cpcv',partilha:'partilha'};
+  const prefix=prefixMap[tipo]||tipo;
+  const tipoReal=tipo==='cmexcl'?'cm-excl':tipo==='cmabrt'?'cm-abrt':tipo;
+  const d=recolherDadosForm(prefix);
+  const stCli=window.outorgantesState?.[prefix+'-cli'];
+  if(stCli)d._outorgantes_vend=stCli.outorgantes||[];
+  const stComp=window.outorgantesState?.[prefix+'-comp'];
+  if(stComp)d._outorgantes_comp=stComp.outorgantes||[];
+  const morada=d[prefix+'-im-morada']||'';
+  const vend=d._outorgantes_vend||[];
+  const partes=vend.map(v=>v.nome).filter(Boolean).join(', ')||'—';
+  const titulo=`${TIPO_LABELS[tipoReal]||tipo} — ${morada||'Sem morada'}`;
+  const imovelRef=d[prefix+'-im-sel']||d._imovelRef||'';
+  const existe=docAtual?.id?bibDB.find(b=>b.id===docAtual.id):null;
+  if(existe){existe.dados=d;existe.titulo=titulo;existe.partes=partes;existe.data=new Date().toISOString();
+  }else{const docId=bibSeq++;bibDB.push({id:docId,tipo:tipoReal,titulo,partes,morada,imovelRef,estado:'rascunho',html:'',dados:d,data:new Date().toISOString()});docAtual={id:docId,tipo:tipoReal,formTipo:tipo};}
+  showToast('Rascunho guardado','success');
+}
+
 function editarDocAtual(){
   if(!docAtual)return;
-  const tipo=docAtual.formTipo;
-  const pgId='pg-'+tipo;
-  go(tipo,TIPO_LABELS[docAtual.tipo]||tipo,'');
   const b=bibDB.find(b=>b.id===docAtual.id);
-  if(b?.dados){
-    setTimeout(()=>{
+  if(!b){showToast('Documento não encontrado','error');return;}
+  const tipo=docAtual.formTipo||b.tipo.replace('-','');
+  go(tipo,TIPO_LABELS[b.tipo]||tipo,'');
+  setTimeout(()=>{
+    if(b.dados){
       Object.entries(b.dados).forEach(([k,v])=>{
         if(k.startsWith('_'))return;
         const e=document.getElementById(k);
-        if(e)e.value=v;
+        if(e&&typeof v==='string')e.value=v;
       });
-    },100);
-  }
+      // Restaurar outorgantes
+      const prefix=tipo==='cmexcl'?'cmexcl':tipo==='cmabrt'?'cmabrt':tipo;
+      if(b.dados._outorgantes_vend&&window.outorgantesState?.[prefix+'-cli']){
+        window.outorgantesState[prefix+'-cli'].outorgantes=b.dados._outorgantes_vend;
+        refreshOgUI(prefix+'-cli');
+      }
+    }
+  },150);
 }
 function finalizarDoc(){
   if(!docAtual)return;
