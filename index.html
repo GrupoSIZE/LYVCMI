@@ -519,17 +519,22 @@ input[disabled]{opacity:.55;cursor:not-allowed}
           <option value="vendido">Vendido</option>
           <option value="antigo">Antigo (arquivado)</option>
         </select>
-        <button type="button" class="btn p" onclick="guardarFichaEdicao()"><i class="ti ti-device-floppy"></i>Guardar</button>
+        <button type="button" class="btn" id="f-btn-edit" onclick="v22EditarFichaAtual()"><i class="ti ti-pencil"></i>Editar imóvel</button>
+        <button type="button" class="btn" id="f-btn-cancel" style="display:none" onclick="v22CancelarEdicaoFicha()"><i class="ti ti-x"></i>Cancelar</button>
+        <button type="button" class="btn p" id="f-btn-save" style="display:none" onclick="guardarFichaEdicao()"><i class="ti ti-device-floppy"></i>Guardar alterações</button>
       </div>
     </div>
     <div class="fsec" style="border-bottom:0.5px solid var(--border-tertiary)">
       <div class="fst">Identificação e proprietário</div>
       <div class="fg">
         <div class="ff full"><label>Morada</label><input id="f-edit-morada" placeholder="Morada completa"></div>
-        <div class="ff"><label>Proprietário</label><input id="f-edit-prop" placeholder="Nome do proprietário"></div>
+        <div class="ff"><label>Proprietário</label><div style="display:flex;gap:6px"><input id="f-edit-prop" placeholder="Nome do proprietário" readonly><button type="button" class="btn" id="f-btn-owner-edit" style="display:none;white-space:nowrap" onclick="v22OpenOwnerEditor()"><i class="ti ti-user-edit"></i>Corrigir</button></div></div>
         <div class="ff"><label>Tipologia</label><select id="f-edit-tipologia"><option>T0</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T4+</option><option>Moradia</option><option>Terreno</option><option>Comercial</option></select></div>
         <div class="ff"><label>Regime</label><select id="f-edit-regime"><option>Exclusivo</option><option>Não exclusivo</option></select></div>
         <div class="ff"><label>Preço pedido (€)</label><input id="f-edit-preco" type="number" placeholder="0.00"></div>
+        <div class="ff"><label>Artigo matricial</label><input id="f-edit-artigo" placeholder="Ex: 2255"></div>
+        <div class="ff"><label>Descrição predial (n.º)</label><input id="f-edit-descpred" placeholder="N.º de registo"></div>
+        <div class="ff full"><label>Ónus / encargos</label><input id="f-edit-onus" placeholder="Ex: hipoteca, penhora... ou sem ónus"></div>
       </div>
     </div>
     <div class="ficha-wrap">
@@ -720,6 +725,21 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 
 </div>
 </div>
+</div>
+
+<!-- ================= MODAL EDIÇÃO PROPRIETÁRIO ================= -->
+<div id="v22-owner-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:9999;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto">
+  <div style="background:var(--bg-primary);border-radius:12px;width:100%;max-width:760px;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:auto">
+    <div class="ch">
+      <div><div class="cht"><i class="ti ti-user-edit"></i>Corrigir proprietário do imóvel</div><div style="font-size:11.5px;color:var(--text-secondary);margin-top:2px">Esta alteração passa a ser a informação mestre usada nas novas minutas.</div></div>
+      <button type="button" class="btn" onclick="v22CloseOwnerEditor()"><i class="ti ti-x"></i>Fechar</button>
+    </div>
+    <div id="v22-owner-editor" style="padding:1rem"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 1rem 1rem">
+      <button type="button" class="btn" onclick="v22CloseOwnerEditor()">Cancelar</button>
+      <button type="button" class="btn p" onclick="v22SaveOwnerEditor()"><i class="ti ti-device-floppy"></i>Guardar proprietário</button>
+    </div>
+  </div>
 </div>
 
 <!-- ================= MODAL PRÉ-VISUALIZAÇÃO ================= -->
@@ -3942,6 +3962,210 @@ editarContratoBib=function(cid){
     mostrarToast(c.estado==='finalizado'?'Base carregada para criar nova versão.':'Rascunho carregado.','info');
   },250);
 };
+</script>
+
+
+<script>
+/* ============================================================
+   LYVCMI V2.2 — master data do imóvel
+   - Proposta/Reserva/CPCV: imóvel + proprietário ficam bloqueados
+     quando vêm da Carteira.
+   - Correções fazem-se na ficha do imóvel, explicitamente em Editar.
+   - Proprietário tem editor estruturado singular/coletivo.
+   ============================================================ */
+
+(function(){
+  const st=document.createElement('style');
+  st.textContent=`
+    .v22-master-locked{border-color:var(--green-mid)!important;background:linear-gradient(0deg,rgba(225,245,238,.18),rgba(225,245,238,.18)),var(--bg-primary)}
+    .v22-master-locked input[readonly], .v22-master-locked textarea[readonly]{background:var(--green-light);border-color:var(--green-mid);color:var(--text-primary);opacity:1}
+    .v22-master-locked select.v22-readonly-select{background:var(--green-light);border-color:var(--green-mid);color:var(--text-primary);opacity:1;pointer-events:none}
+    .v22-master-locked .tog,.v22-master-locked .sub-tog,.v22-master-locked .add-btn,.v22-master-locked .remove-btn{pointer-events:none;opacity:.78}
+    .v22-lock-note{display:flex;align-items:center;gap:6px;padding:7px 9px;margin:.35rem 0 .75rem;background:var(--green-light);color:var(--green-dark);border-radius:7px;font-size:11.5px}
+    .v22-card-edit{margin-left:auto;padding:4px 8px;font-size:11px}
+    .v22-ficha-readonly input[readonly]{background:var(--bg-secondary);color:var(--text-primary);opacity:1}
+    .v22-ficha-readonly select.v22-readonly-select{pointer-events:none;background:var(--bg-secondary);color:var(--text-primary);opacity:1}
+  `;
+  document.head.appendChild(st);
+})();
+
+function v22DocumentOwnerPrefix(targetPrefix){
+  return {'proposta-im':'proposta-vend','reserva-im':'reserva-prop','cpcv-im':'cpcv-vend'}[targetPrefix]||null;
+}
+function v22PropertyElements(targetPrefix){
+  return ['morada','artigo','descpred','tipologia','finalidade','onus','valor']
+    .map(x=>document.getElementById(`${targetPrefix}-${x}`)).filter(Boolean);
+}
+function v22LockInput(el,locked){
+  if(!el)return;
+  if(el.tagName==='SELECT'){
+    el.classList.toggle('v22-readonly-select',!!locked);
+    el.setAttribute('aria-readonly',locked?'true':'false');
+    el.tabIndex=locked?-1:0;
+  }else{
+    el.readOnly=!!locked;
+    el.setAttribute('aria-readonly',locked?'true':'false');
+  }
+}
+function v22SetCardNote(card,locked,text){
+  if(!card)return;
+  card.classList.toggle('v22-master-locked',!!locked);
+  let note=card.querySelector(':scope > .v22-lock-note');
+  if(locked){
+    if(!note){note=document.createElement('div');note.className='v22-lock-note';const title=card.querySelector('.fc-title');if(title)title.insertAdjacentElement('afterend',note);else card.prepend(note)}
+    note.innerHTML=`<i class="ti ti-lock"></i><span>${text}</span>`;
+  }else if(note)note.remove();
+}
+function v22SetDocumentMasterLock(targetPrefix,locked){
+  const propPrefix=v22DocumentOwnerPrefix(targetPrefix);
+  const propertyEls=v22PropertyElements(targetPrefix);
+  propertyEls.forEach(el=>v22LockInput(el,locked));
+  const propertyCard=document.getElementById(`${targetPrefix}-morada`)?.closest('.form-card');
+  v22SetCardNote(propertyCard,locked,'Dados do imóvel vindos da Carteira. Para corrigir, use <strong>Carteira de imóveis → Editar imóvel</strong>.');
+
+  if(propPrefix){
+    const ownerCard=document.getElementById(`${propPrefix}-tipo-singular`)?.closest('.form-card');
+    if(ownerCard){
+      ownerCard.querySelectorAll('input,textarea').forEach(el=>v22LockInput(el,locked));
+      ownerCard.querySelectorAll('select').forEach(el=>v22LockInput(el,locked));
+      ownerCard.querySelectorAll('.tog,.sub-tog,.add-btn,.remove-btn').forEach(el=>{el.style.pointerEvents=locked?'none':'';el.style.opacity=locked?'.78':''});
+    }
+    v22SetCardNote(ownerCard,locked,'Proprietário carregado do CMI/ficha do imóvel. Aqui é apenas leitura.');
+  }
+}
+function v22ClearDocumentMaster(targetPrefix){
+  v22PropertyElements(targetPrefix).forEach(el=>{
+    v22LockInput(el,false);
+    if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';
+  });
+  const p=v22DocumentOwnerPrefix(targetPrefix);
+  if(p && outorgantesState[p])ogRestoreSnapshot(p,{tipo:'singular',estadoCivil:'solteiro',casadoModo:'',outorgantes:[{}],reps:[]});
+  v22SetDocumentMasterLock(targetPrefix,false);
+}
+
+const _v22AplicarImovelPortfolio=aplicarImovelPortfolio;
+aplicarImovelPortfolio=function(targetPrefix){
+  const sel=document.getElementById(targetPrefix+'-portfolio-sel');
+  const ref=sel?.value||'';
+  if(!ref){
+    const info=document.getElementById(targetPrefix+'-portfolio-info');if(info)info.style.display='none';
+    v22ClearDocumentMaster(targetPrefix);return;
+  }
+  _v22AplicarImovelPortfolio(targetPrefix);
+  const f=fichas[ref];const p=v22DocumentOwnerPrefix(targetPrefix);
+  /* V2.1 consegue restaurar singular/coletiva a partir do snapshot mestre. */
+  if(p&&f?.proprietarioSnap&&outorgantesState[p])ogRestoreSnapshot(p,f.proprietarioSnap);
+  v22SetDocumentMasterLock(targetPrefix,true);
+};
+
+/* ---- Carteira: modo leitura por defeito / edição explícita ---- */
+let v22FichaEditing=false;
+function v22SetFichaEditing(editing){
+  v22FichaEditing=!!editing;
+  const card=document.getElementById('ficha-card');if(!card)return;
+  card.classList.toggle('v22-ficha-readonly',!editing);
+  ['f-edit-morada','f-edit-preco','f-edit-artigo','f-edit-descpred','f-edit-onus'].forEach(id=>v22LockInput(document.getElementById(id),!editing));
+  ['f-edit-tipologia','f-edit-regime','f-estado-sel'].forEach(id=>v22LockInput(document.getElementById(id),!editing));
+  const prop=document.getElementById('f-edit-prop');if(prop)prop.readOnly=true;
+  const bEdit=document.getElementById('f-btn-edit'),bSave=document.getElementById('f-btn-save'),bCancel=document.getElementById('f-btn-cancel'),bOwner=document.getElementById('f-btn-owner-edit');
+  if(bEdit)bEdit.style.display=editing?'none':'inline-flex';
+  if(bSave)bSave.style.display=editing?'inline-flex':'none';
+  if(bCancel)bCancel.style.display=editing?'inline-flex':'none';
+  if(bOwner)bOwner.style.display=editing?'inline-flex':'none';
+}
+function v22EditarFichaAtual(){if(!fichaAberta)return;v22SetFichaEditing(true)}
+function v22EditarFicha(ref){abrirFicha(ref);v22SetFichaEditing(true)}
+function v22CancelarEdicaoFicha(){if(!fichaAberta)return;selIm(fichaAberta);v22SetFichaEditing(false)}
+
+const _v22AbrirFicha=abrirFicha;
+abrirFicha=function(ref){_v22AbrirFicha(ref);v22SetFichaEditing(false)};
+const _v22AbrirNovoImovel=abrirNovoImovel;
+abrirNovoImovel=function(){_v22AbrirNovoImovel();v22SetFichaEditing(true)};
+
+/* Campos mestre adicionais na ficha. */
+const _v22SelIm=selIm;
+selIm=function(ref){
+  _v22SelIm(ref);const f=fichas[ref];if(!f)return;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||''};
+  set('f-edit-artigo',f.artigo||'');set('f-edit-descpred',f.descpred||'');set('f-edit-onus',f.onus||'');
+};
+
+/* Cartões com ação Editar visível, sem deixar a ficha toda em edição por defeito. */
+renderCarteiraLista=function(){
+  const lista=document.getElementById('carteira-lista');
+  const items=Object.values(fichas).filter(f=>categoriaDoImovel(f)===carteiraTabAtual);
+  if(items.length===0){lista.innerHTML='<div class="im-card-empty"><i class="ti ti-building-estate" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>Sem imóveis nesta categoria</div>';return}
+  lista.innerHTML=items.map(f=>{
+    const fotos=fotosDB[f.ref]||[];
+    const fotoHtml=fotos.length?`<img class="im-card-foto" src="${fotos[0].dataUrl}" alt="Foto de capa ${f.ref}">`:`<div class="im-card-foto-placeholder"><i class="ti ti-camera"></i><span>Sem fotos</span></div>`;
+    return `<div class="im-card" onclick="abrirFicha('${f.ref}')">${fotoHtml}<div class="im-card-body"><div class="im-card-top"><div><div class="im-card-ref">${f.ref}</div><div class="im-card-morada">${v2Esc(f.morada||'—')}</div></div><div style="display:flex;align-items:center;gap:6px"><span class="bdg ${estadoBadge[f.estado]||'bb'}">${estadoLabel[f.estado]||f.estado}</span><button type="button" class="btn v22-card-edit" onclick="event.stopPropagation();v22EditarFicha('${f.ref}')"><i class="ti ti-pencil"></i>Editar</button></div></div><div class="im-card-preco">€ ${Number(f.preco||0).toLocaleString('pt-PT')}</div><div class="im-card-meta"><span><i class="ti ti-ruler-2"></i> ${v2Esc(f.tipologia||'—')}</span><span><i class="ti ti-user"></i> ${v2Esc(f.proprietario||'—')}</span>${f.dataVenda?`<span><i class="ti ti-calendar-check"></i> ${v2Esc(f.dataVenda)}</span>`:''}${fotos.length?`<span style="margin-left:auto;color:var(--green-dark)"><i class="ti ti-photo"></i> ${fotos.length}</span>`:''}</div></div></div>`;
+  }).join('');
+};
+
+/* Guardar alterações do imóvel (não altera silenciosamente o proprietário). */
+guardarFichaEdicao=async function(){
+  if(!fichaAberta||!currentAgenciaId)return;const f=fichas[fichaAberta];
+  f.morada=document.getElementById('f-edit-morada').value.trim();f.tipologia=document.getElementById('f-edit-tipologia').value;f.regime=document.getElementById('f-edit-regime').value;f.preco=parseFloat(document.getElementById('f-edit-preco').value)||0;f.estado=document.getElementById('f-estado-sel').value;f.artigo=document.getElementById('f-edit-artigo').value.trim();f.descpred=document.getElementById('f-edit-descpred').value.trim();f.onus=document.getElementById('f-edit-onus').value.trim();
+  const {data:{user}}=await supa.auth.getUser();
+  const payload={agencia_id:currentAgenciaId,referencia:f.ref,morada:f.morada,tipologia:f.tipologia,preco:f.preco,estado:f.estado,regime:f.regime,artigo:f.artigo||null,desc_predial:f.descpred||null,onus:f.onus||null,docs_json:f.docs||V2_DEFAULT_DOCS,created_by:user?.id||null,agente_responsavel_id:agenteAtual.id||null};
+  try{
+    let row;if(f.db_id){const q=await supa.from('imoveis').update(payload).eq('id',f.db_id).select('*').single();if(q.error)throw q.error;row=q.data}else{const q=await supa.from('imoveis').insert(payload).select('*').single();if(q.error)throw q.error;row=q.data;f.db_id=row.id;f.ref=row.referencia||f.ref}
+    f.title=f.ref+' — '+f.morada;f.info=[{l:'Proprietário',v:f.proprietario||'—'},{l:'Tipologia',v:f.tipologia},{l:'Regime',v:f.regime},{l:'Ónus',v:f.onus||'—'},{l:'Preço pedido',v:'€ '+Number(f.preco).toLocaleString('pt-PT')}];
+    mostrarToast('Alterações do imóvel guardadas.','ok');renderCarteira();renderDash();selIm(fichaAberta);v22SetFichaEditing(false);
+  }catch(e){console.error(e);mostrarToast('Erro ao guardar imóvel: '+(e.message||e),'err')}
+};
+
+/* ---- Correção estruturada do proprietário mestre ---- */
+const V22_OWNER_PREFIX='v22-imovel-owner';
+function v22OpenOwnerEditor(){
+  if(!fichaAberta)return;const f=fichas[fichaAberta];const wrap=document.getElementById('v22-owner-editor');
+  wrap.innerHTML=outorgantesBlock(V22_OWNER_PREFIX,'Proprietário(s) do imóvel','ti-user');ogInitAll([V22_OWNER_PREFIX]);
+  if(f?.proprietarioSnap)ogRestoreSnapshot(V22_OWNER_PREFIX,f.proprietarioSnap);
+  document.getElementById('v22-owner-modal').style.display='flex';
+}
+function v22CloseOwnerEditor(){document.getElementById('v22-owner-modal').style.display='none'}
+function v22SnapToOwners(snap){
+  if(!snap)return[];
+  if(snap.tipo==='coletiva'){
+    const e=snap.empresa||{};return e.denominacao?[{tipo:'coletiva',nome:e.denominacao,nif:e.nif||'',doc:e.registo||'',morada:e.morada||'',email:e.email||'',telefone:e.telefone||'',empresa:e,reps:snap.reps||[]}]:[];
+  }
+  return (snap.outorgantes||[]).filter(o=>o.nome?.trim()).map(o=>({tipo:'singular',...o}));
+}
+/* Atualiza também contactos antigos quando o tipo/dados foram corrigidos. */
+const _v22FindOrCreateContact=v2FindOrCreateContact;
+v2FindOrCreateContact=async function(o){
+  if(!o?.nome)return null;let q=supa.from('contactos').select('*').eq('agencia_id',currentAgenciaId);
+  if(o.nif)q=q.eq('nif',o.nif);else if(o.email)q=q.eq('email',o.email);else q=q.eq('nome',o.nome);
+  const found=await q.limit(1).maybeSingle();
+  const payload={tipo:o.tipo==='coletiva'?'coletiva':'singular',nome:o.nome,nif:o.nif||null,email:o.email||null,telefone:o.telefone||null,documento:o.doc||null,morada:o.morada||null,empresa:o.tipo==='coletiva'?o.nome:null};
+  if(!found.error&&found.data){const up=await supa.from('contactos').update(payload).eq('id',found.data.id).select('*').single();if(up.error)throw up.error;return up.data}
+  return _v22FindOrCreateContact(o);
+};
+/* Fallback de contactos legados respeita tipo coletiva. */
+v2OwnerSnap=function(owners){
+  if(!owners?.length)return null;
+  if(owners.length===1&&owners[0]?.tipo==='coletiva'){
+    const c=owners[0];return{tipo:'coletiva',empresa:{denominacao:c.nome||c.empresa||'',nif:c.nif||'',registo:c.documento||'',morada:c.morada||'',email:c.email||'',telefone:c.telefone||''},reps:[{}],outorgantes:[]};
+  }
+  return{tipo:'singular',estadoCivil:'solteiro',casadoModo:'',outorgantes:owners.map(c=>({nome:c.nome||'',nif:c.nif||'',doc:c.documento||'',morada:c.morada||'',email:c.email||'',telefone:c.telefone||''})),reps:[]};
+};
+async function v22SaveOwnerEditor(){
+  if(!fichaAberta||!fichas[fichaAberta]?.db_id)return;const f=fichas[fichaAberta];const snap=ogSnapshot(V22_OWNER_PREFIX);const owners=v22SnapToOwners(snap);
+  if(!owners.length){mostrarToast('Identifica pelo menos um proprietário.','err');return}
+  if(snap.tipo==='coletiva' && !(snap.reps||[]).some(r=>r.nome?.trim())){mostrarToast('Indica pelo menos um representante legal.','err');return}
+  try{
+    const {data:row,error:rowErr}=await supa.from('imoveis').select('dados_json').eq('id',f.db_id).single();if(rowErr)throw rowErr;
+    const contacts=[];for(const o of owners){contacts.push(await v2FindOrCreateContact(o))}
+    const del=await supa.from('imovel_contactos').delete().eq('imovel_id',f.db_id).eq('papel','proprietario');if(del.error)throw del.error;
+    for(let i=0;i<contacts.length;i++){const q=await supa.from('imovel_contactos').insert({agencia_id:currentAgenciaId,imovel_id:f.db_id,contacto_id:contacts[i].id,papel:'proprietario',principal:i===0});if(q.error)throw q.error}
+    const dados={...(row?.dados_json||{}),proprietario_snapshot:snap};const up=await supa.from('imoveis').update({dados_json:dados}).eq('id',f.db_id);if(up.error)throw up.error;
+    f.proprietarioSnap=snap;f.proprietario=owners.map(o=>o.nome).join(' / ');const pe=document.getElementById('f-edit-prop');if(pe)pe.value=f.proprietario;f.info=(f.info||[]).map(x=>x.l==='Proprietário'?{...x,v:f.proprietario}:x);
+    v22CloseOwnerEditor();mostrarToast('Proprietário atualizado. As novas minutas usarão estes dados.','ok');renderCarteira();renderDash();selIm(fichaAberta);v22SetFichaEditing(true);
+  }catch(e){console.error(e);mostrarToast('Erro ao atualizar proprietário: '+(e.message||e),'err')}
+}
+
+/* Ao carregar a ficha, garantir estado de leitura. */
+setTimeout(()=>{if(fichaAberta)v22SetFichaEditing(false)},0);
 </script>
 
 </body>
