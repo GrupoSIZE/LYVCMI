@@ -42,7 +42,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sb-info{flex:1;min-width:0}
 .sb-name{font-size:12px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-meta{font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-actions{display:flex;gap:4px}
+.sb-actions{display:flex;gap:4px;flex-shrink:0}
+@media(max-width:900px){.sb-actions .sb-btn span{display:none}}
 .sb-btn{background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;padding:4px;border-radius:4px;font-size:15px;display:flex;align-items:center}
 .sb-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
 
@@ -1998,16 +1999,32 @@ supa.auth.onAuthStateChange((event,session)=>{
   }
 });
 async function authLoadAgencia(userId){
-  const {data}=await supa.from('agencias').select('*').eq('user_id',userId).single();
-  if(data&&data.nome){
-    const map={nome:'nome',marca:'marca',nif:'nif',ami:'ami',morada:'morada',email:'email',telefone:'telefone',gerente:'gerente',gerenteNif:'gerente_nif',seguradora:'seguradora',seguroApolice:'seguro_apolice',seguroCapital:'seguro_capital',seguroValidade:'seguro_validade',iban:'iban',banco:'banco',logo:'logo_url'};
-    Object.entries(map).forEach(([k,v])=>{if(data[v])agencia[k]=data[v];});
-    cfgUpdateSidebar();
-    renderDash();
-  }else{
+  try{
+    const {data,error}=await supa.from('agencias').select('*').eq('user_id',userId).single();
+    if(error){
+      console.warn('Supabase agencia error:',error.message);
+      // Tentar sem RLS — policy pode estar mal configurada
+      setTimeout(()=>{
+        go('agencia','Perfil da Agência','Preenche os dados da tua agência para começar');
+        showToast('Bem-vindo ao LYVCMI! Preenche os dados da agência.');
+      },300);
+      return;
+    }
+    if(data&&data.nome){
+      const map={nome:'nome',marca:'marca',nif:'nif',ami:'ami',morada:'morada',email:'email',telefone:'telefone',gerente:'gerente',gerenteNif:'gerente_nif',seguradora:'seguradora',seguroApolice:'seguro_apolice',seguroCapital:'seguro_capital',seguroValidade:'seguro_validade',iban:'iban',banco:'banco',logo:'logo_url'};
+      Object.entries(map).forEach(([k,v])=>{if(data[v])agencia[k]=data[v];});
+      cfgUpdateSidebar();
+      renderDash();
+    }else{
+      setTimeout(()=>{
+        go('agencia','Perfil da Agência','Preenche os dados da tua agência para começar');
+        showToast('Bem-vindo ao LYVCMI! Preenche os dados da agência.');
+      },300);
+    }
+  }catch(e){
+    console.error('authLoadAgencia error:',e);
     setTimeout(()=>{
       go('agencia','Perfil da Agência','Preenche os dados da tua agência para começar');
-      showToast('Bem-vindo ao LYVCMI! Preenche os dados da agência.');
     },300);
   }
 }
