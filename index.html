@@ -393,42 +393,32 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 <!-- ================= DASHBOARD ================= -->
 <div class="pg on" id="pg-dash">
   <div class="mcs">
-    <div class="mc"><div class="mcl">Imóveis ativos</div><div class="mcv">7</div><div class="mcs2">3 exclusivos · 4 abertos</div></div>
-    <div class="mc g"><div class="mcl">Comissões previstas</div><div class="mcv">€ 42.800</div><div class="mcs2">Carteira total</div></div>
-    <div class="mc a"><div class="mcl">A receber (CPCV)</div><div class="mcv">€ 9.778</div><div class="mcs2">Aguarda escritura</div></div>
-    <div class="mc g"><div class="mcl">Recebido 2026</div><div class="mcv">€ 31.200</div><div class="mcs2">3 vendas concluídas</div></div>
+    <div class="mc"><div class="mcl">Imóveis ativos</div><div class="mcv" id="dash-ativos">0</div><div class="mcs2" id="dash-ativos-sub">Sem imóveis na carteira</div></div>
+    <div class="mc g"><div class="mcl">Comissões previstas</div><div class="mcv" id="dash-comissoes">€ 0</div><div class="mcs2">Carteira total</div></div>
+    <div class="mc a"><div class="mcl">A receber (CPCV)</div><div class="mcv" id="dash-cpcv">€ 0</div><div class="mcs2">Aguarda escritura</div></div>
+    <div class="mc g"><div class="mcl">Recebido 2026</div><div class="mcv" id="dash-recebido">€ 0</div><div class="mcs2" id="dash-recebido-sub">0 vendas concluídas</div></div>
   </div>
   <div class="row2">
     <div class="card">
       <div class="ch"><div class="cht"><i class="ti ti-alert-circle"></i>Alertas</div></div>
-      <div class="fu"><div class="fd" style="background:#E24B4A"></div><div class="fi"><div class="ft r">Contrato IM002 expira em 14 dias</div><div class="fs">Av. Central 45, Guimarães — renovar ou fechar</div></div></div>
-      <div class="fu"><div class="fd" style="background:#EF9F27"></div><div class="fi"><div class="ft">Follow-up — Ana Costa · IM001</div><div class="fs">Visitou há 5 dias · sem resposta</div></div></div>
-      <div class="fu"><div class="fd" style="background:#EF9F27"></div><div class="fi"><div class="ft">Escritura IM003 em 30 dias</div><div class="fs">Cancelamento hipoteca Novo Banco</div></div></div>
-      <div class="fu"><div class="fd" style="background:#1D9E75"></div><div class="fi"><div class="ft ok">Visita hoje 15h00 · IM004</div><div class="fs">Largo da Sé 8 · Família Rodrigues</div></div></div>
+      <div id="dash-alertas"><div style="padding:1rem;color:var(--text-secondary);font-size:13px;text-align:center"><i class="ti ti-check" style="color:var(--green)"></i> Sem alertas pendentes</div></div>
     </div>
     <div class="card">
       <div class="ch"><div class="cht"><i class="ti ti-chart-bar"></i>Vendas concluídas 2026</div></div>
-      <table>
-        <thead><tr><th>Imóvel</th><th>Escritura</th><th>Recebido</th></tr></thead>
-        <tbody>
-          <tr><td>R. do Parque 5</td><td>15/02</td><td style="color:var(--green-dark);font-weight:600">€ 9.300</td></tr>
-          <tr><td>Av. Liberdade 88</td><td>08/04</td><td style="color:var(--green-dark);font-weight:600">€ 3.600 <span class="bdg bgr">50%</span></td></tr>
-          <tr><td>R. Combatentes 3</td><td>22/05</td><td style="color:var(--green-dark);font-weight:600">€ 18.600</td></tr>
-        </tbody>
-      </table>
+      <div id="dash-vendas-wrap">
+        <table><thead><tr><th>Imóvel</th><th>Escritura</th><th>Recebido</th></tr></thead>
+        <tbody id="dash-vendas"><tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
   <div class="card">
     <div class="ch"><div class="cht"><i class="ti ti-building-estate"></i>Carteira ativa</div><button class="btn p" onclick="go('carteira','Carteira de imóveis','Ativos · vendidos · antigos')">Ver carteira</button></div>
-    <table>
-      <thead><tr><th style="width:52px">Ref.</th><th>Morada</th><th style="width:72px">Preço</th><th style="width:62px">Regime</th><th style="width:90px">Com. líquida</th><th style="width:68px">Estado</th><th style="width:84px">Docs</th></tr></thead>
-      <tbody>
-        <tr><td>IM001</td><td>R. das Flores 12, Braga</td><td>€ 285k</td><td><span class="bdg bg">Excl.</span></td><td style="color:var(--green-dark);font-weight:600">€ 10.507</td><td><span class="bdg bb">Ativo</span></td><td><span class="bdg ba">2 em falta</span></td></tr>
-        <tr><td>IM003</td><td>Rua do Rio 63, Palmeira</td><td>€ 265k</td><td><span class="bdg bg">Excl.</span></td><td style="color:var(--green-dark);font-weight:600">€ 9.778</td><td><span class="bdg ba">CPCV</span></td><td><span class="bdg bg">Completo</span></td></tr>
-        <tr><td>IM004</td><td>Largo da Sé 8, Braga</td><td>€ 420k</td><td><span class="bdg bg">Excl.</span></td><td style="color:var(--green-dark);font-weight:600">€ 15.498</td><td><span class="bdg ba">Proposta</span></td><td><span class="bdg br">4 em falta</span></td></tr>
-        <tr><td>IM002</td><td>Av. Central 45, Guimarães</td><td>€ 195k</td><td><span class="bdg bgr">Aberto</span></td><td style="color:var(--amber);font-weight:600">€ 3.594</td><td><span class="bdg bb">Ativo</span></td><td><span class="bdg ba">1 em falta</span></td></tr>
-      </tbody>
-    </table>
+    <div id="dash-carteira-wrap">
+      <table><thead><tr><th style="width:52px">Ref.</th><th>Morada</th><th style="width:72px">Preço</th><th style="width:62px">Regime</th><th style="width:90px">Com. líquida</th><th style="width:68px">Estado</th></tr></thead>
+      <tbody id="dash-carteira"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem imóveis na carteira. <a href="#" onclick="go('carteira','Carteira de imóveis','');return false">Adicionar imóvel →</a></td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -542,19 +532,18 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 <div class="pg" id="pg-agenda">
   <div class="row2">
     <div class="card">
-      <div class="ch"><div class="cht"><i class="ti ti-calendar-event"></i>Visitas — Junho 2026</div><button class="btn p"><i class="ti ti-plus"></i>Nova</button></div>
-      <div class="vi"><div class="vh"><div class="vhh">15h00</div><div class="vhd">Hoje</div></div><div style="flex:1;min-width:0"><div class="vim">IM004 · Largo da Sé 8</div><div class="vic">Família Rodrigues · 912 000 000</div><div class="vin">2ª visita · muito interessados</div></div><span class="bdg bg">Confirmada</span></div>
-      <div class="vi"><div class="vh"><div class="vhh">10h30</div><div class="vhd">17 Jun</div></div><div style="flex:1;min-width:0"><div class="vim">IM001 · R. das Flores 12</div><div class="vic">Manuel Ferreira · 963 000 000</div><div class="vin">1ª visita · vem de Lisboa</div></div><span class="bdg ba">Pendente</span></div>
-      <div class="vi"><div class="vh"><div class="vhh">14h00</div><div class="vhd">19 Jun</div></div><div style="flex:1;min-width:0"><div class="vim">IM002 · Av. Central 45</div><div class="vic">Sofia Almeida · 934 000 000</div><div class="vin">Interessada em T2</div></div><span class="bdg ba">Pendente</span></div>
-      <div class="vi"><div class="vh"><div class="vhh">11h00</div><div class="vhd">23 Jun</div></div><div style="flex:1;min-width:0"><div class="vim">IM004 · Largo da Sé 8</div><div class="vic">Casal Marques · 916 000 000</div><div class="vin">Novos interessados</div></div><span class="bdg bgr">Por confirmar</span></div>
+      <div class="ch"><div class="cht"><i class="ti ti-calendar-event"></i>Visitas agendadas</div><button class="btn p"><i class="ti ti-plus"></i>Nova</button></div>
+      <div style="padding:1.5rem;text-align:center;color:var(--text-secondary);font-size:13px">
+        <i class="ti ti-calendar-off" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.4"></i>
+        Sem visitas agendadas
+      </div>
     </div>
     <div class="card">
       <div class="ch"><div class="cht"><i class="ti ti-bell"></i>Follow-up pendente</div></div>
-      <div class="fu"><div class="fd" style="background:#E24B4A"></div><div class="fi"><div class="ft r">Ana Costa — IM001</div><div class="fs">Visitou há 5 dias · sem resposta ao email</div></div><button class="btn" style="font-size:11px;flex-shrink:0">Contactar</button></div>
-      <div class="fu"><div class="fd" style="background:#EF9F27"></div><div class="fi"><div class="ft">Pedro Santos — IM004</div><div class="fs">Pediu simulação bancária · aguarda</div></div><button class="btn" style="font-size:11px;flex-shrink:0">Lembrar</button></div>
-      <div class="fu"><div class="fd" style="background:#EF9F27"></div><div class="fi"><div class="ft">Família Rodrigues — IM004</div><div class="fs">Após visita hoje · enviar ficha técnica</div></div><button class="btn" style="font-size:11px;flex-shrink:0">Preparar</button></div>
-      <div class="fu"><div class="fd" style="background:#1D9E75"></div><div class="fi"><div class="ft ok">Proprietário IM003</div><div class="fs">Confirmar cancelamento hipoteca Novo Banco</div></div><button class="btn" style="font-size:11px;flex-shrink:0">Verificar</button></div>
-      <div class="fu"><div class="fd" style="background:#1D9E75"></div><div class="fi"><div class="ft ok">Renovação contrato IM002</div><div class="fs">Expira em 14 dias · contactar proprietário</div></div><button class="btn" style="font-size:11px;flex-shrink:0">Agendar</button></div>
+      <div style="padding:1.5rem;text-align:center;color:var(--text-secondary);font-size:13px">
+        <i class="ti ti-checks" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.4"></i>
+        Sem follow-ups pendentes
+      </div>
     </div>
   </div>
 </div>
@@ -685,11 +674,12 @@ function go(id,t,s){
     if(prefMap[id]&&prefMap[id].length)ogInitAll(prefMap[id]);
   }
   if(id==='carteira')renderCarteira();
+  if(id==='dash')renderDash();
   if(id==='biblioteca')renderBiblioteca();
 }
 
 /* ====================== FICHAS DE IMÓVEL (dados de exemplo) ====================== */
-let fichaSeq=5;
+let fichaSeq=1;
 // Helper para criar um snapshot de proprietário singular
 function mkSnap(nome,nif,doc,morada,casado){
   return{tipo:'singular',estadoCivil:casado?'casado':'solteiro',casadoModo:casado?'ambos':'',
@@ -698,40 +688,7 @@ function mkSnap(nome,nif,doc,morada,casado){
       :[{nome,nif,doc,morada}],
     reps:[]};
 }
-const fichas={
-  IM001:{ref:'IM001',title:'IM001 — R. das Flores 12, Braga',morada:'R. das Flores 12, Braga',proprietario:'Carlos Matos',tipologia:'T3 · 120m²',regime:'Exclusivo',estado:'ativo',ec:'bb',preco:285000,
-    proprietarioSnap:mkSnap('Carlos Matos','123456789','CC 12345678 (válido até 2028)','Rua das Flores 12, Braga'),
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'miss'},{n:'Certificado energético',s:'miss'},{n:'Ficha técnica de habitação',s:'ok'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'ok'},{n:'Planta do imóvel',s:'wrn'}],
-    info:[{l:'Proprietário',v:'Carlos Matos'},{l:'Tipologia',v:'T3 · 120m²'},{l:'Regime',v:'Exclusivo até 15/12/2026'},{l:'Ónus',v:'Sem ónus'},{l:'Preço pedido',v:'€ 285.000'},{l:'Visitas realizadas',v:'12'}]},
-  IM003:{ref:'IM003',title:'IM003 — Rua do Rio 63, Palmeira',morada:'Rua do Rio 63, Palmeira',proprietario:'Eduardo & Dayane Michelli',tipologia:'T4 · 180m²',regime:'Exclusivo',estado:'cpcv',ec:'ba',preco:265000,
-    proprietarioSnap:{tipo:'singular',estadoCivil:'casado',casadoModo:'ambos',
-      outorgantes:[
-        {nome:'Eduardo Michelli',nif:'234567890',doc:'CC 23456789 (válido até 2026)','morada':'Rua do Rio 63, Palmeira'},
-        {nome:'Dayane Michelli',nif:'345678901',doc:'Passaporte BR-12345678','morada':'Rua do Rio 63, Palmeira'}
-      ],reps:[]},
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'ok'},{n:'Certificado energético',s:'ok'},{n:'Ficha técnica de habitação',s:'ok'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Distrate hipoteca Novo Banco',s:'wrn'},{n:'Declaração não dívidas AT',s:'ok'}],
-    info:[{l:'Proprietário',v:'Eduardo & Dayane Michelli'},{l:'Tipologia',v:'T4 · 180m²'},{l:'Escritura',v:'Até 30/05/2026'},{l:'Ónus',v:'2 hipotecas (a cancelar)'},{l:'Preço venda',v:'€ 265.000'},{l:'Sinal recebido',v:'€ 15.000'}]},
-  IM004:{ref:'IM004',title:'IM004 — Largo da Sé 8, Braga',morada:'Largo da Sé 8, Braga',proprietario:'António Leite',tipologia:'T4 · 220m²',regime:'Exclusivo',estado:'proposta',ec:'ba',preco:420000,
-    proprietarioSnap:mkSnap('António Leite','456789012','CC 34567890 (válido até 2029)','Largo da Sé 8, Braga'),
-    docs:[{n:'Caderneta predial',s:'miss'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'miss'},{n:'Certificado energético',s:'miss'},{n:'Ficha técnica de habitação',s:'miss'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'miss'},{n:'Planta do imóvel',s:'ok'}],
-    info:[{l:'Proprietário',v:'António Leite'},{l:'Tipologia',v:'T4 · 220m²'},{l:'Regime',v:'Exclusivo até 01/02/2027'},{l:'Ónus',v:'Sem ónus'},{l:'Preço pedido',v:'€ 420.000'},{l:'Proposta aceite',v:'€ 410.000'}]},
-  IM002:{ref:'IM002',title:'IM002 — Av. Central 45, Guimarães',morada:'Av. Central 45, Guimarães',proprietario:'Sofia Almeida',tipologia:'T2 · 85m²',regime:'Não exclusivo',estado:'ativo',ec:'bb',preco:195000,
-    proprietarioSnap:mkSnap('Sofia Almeida','567890123','CC 45678901 (válido até 2027)','Av. Central 45, Guimarães'),
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'ok'},{n:'Certificado energético',s:'wrn'},{n:'Ficha técnica de habitação',s:'ok'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'ok'},{n:'Planta do imóvel',s:'ok'}],
-    info:[{l:'Proprietário',v:'Sofia Almeida'},{l:'Tipologia',v:'T2 · 85m²'},{l:'Regime',v:'Não exclusivo até 30/09/2026'},{l:'Ónus',v:'Sem ónus'},{l:'Preço pedido',v:'€ 195.000'},{l:'Visitas realizadas',v:'5'}]},
-  'IM-V01':{ref:'IM-V01',title:'IM-V01 — R. do Parque 5, Braga',morada:'R. do Parque 5, Braga',proprietario:'Helena Sousa',tipologia:'T3 · 110m²',regime:'Exclusivo',estado:'vendido',ec:'bg',preco:310000,dataVenda:'15/02/2026',comissaoRecebida:9300,
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'ok'},{n:'Certificado energético',s:'ok'},{n:'Ficha técnica de habitação',s:'ok'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'ok'},{n:'Planta do imóvel',s:'ok'}],
-    info:[{l:'Proprietário',v:'Helena Sousa'},{l:'Tipologia',v:'T3 · 110m²'},{l:'Escritura',v:'15/02/2026'},{l:'Preço venda',v:'€ 310.000'},{l:'Comissão recebida',v:'€ 9.300'}]},
-  'IM-V02':{ref:'IM-V02',title:'IM-V02 — Av. Liberdade 88, Braga',morada:'Av. Liberdade 88, Braga',proprietario:'Jorge Pinto',tipologia:'T2 · 90m²',regime:'Não exclusivo',estado:'vendido',ec:'bg',preco:240000,dataVenda:'08/04/2026',comissaoRecebida:3600,
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'ok'},{n:'Certificado energético',s:'ok'},{n:'Ficha técnica de habitação',s:'ok'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'ok'},{n:'Planta do imóvel',s:'ok'}],
-    info:[{l:'Proprietário',v:'Jorge Pinto'},{l:'Tipologia',v:'T2 · 90m²'},{l:'Escritura',v:'08/04/2026'},{l:'Preço venda',v:'€ 240.000'},{l:'Comissão recebida (50%)',v:'€ 3.600'}]},
-  'IM-V03':{ref:'IM-V03',title:'IM-V03 — R. Combatentes 3, Braga',morada:'R. Combatentes 3, Braga',proprietario:'Ricardo Nunes',tipologia:'Moradia · 280m²',regime:'Exclusivo',estado:'vendido',ec:'bg',preco:620000,dataVenda:'22/05/2026',comissaoRecebida:18600,
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'ok'},{n:'Certificado energético',s:'ok'},{n:'Ficha técnica de habitação',s:'ok'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'ok'},{n:'Planta do imóvel',s:'ok'}],
-    info:[{l:'Proprietário',v:'Ricardo Nunes'},{l:'Tipologia',v:'Moradia · 280m²'},{l:'Escritura',v:'22/05/2026'},{l:'Preço venda',v:'€ 620.000'},{l:'Comissão recebida',v:'€ 18.600'}]},
-  'IM-A01':{ref:'IM-A01',title:'IM-A01 — Tv. das Oliveiras 7, Braga',morada:'Tv. das Oliveiras 7, Braga',proprietario:'Manuel Costa',tipologia:'T1 · 60m²',regime:'Não exclusivo',estado:'antigo',ec:'bgr',preco:120000,
-    docs:[{n:'Caderneta predial',s:'ok'},{n:'Certidão permanente registo predial',s:'ok'},{n:'Licença de utilização',s:'miss'},{n:'Certificado energético',s:'miss'},{n:'Ficha técnica de habitação',s:'miss'},{n:'Doc. identidade (proprietário)',s:'ok'},{n:'Declaração não dívidas AT',s:'miss'},{n:'Planta do imóvel',s:'miss'}],
-    info:[{l:'Proprietário',v:'Manuel Costa'},{l:'Tipologia',v:'T1 · 60m²'},{l:'Contrato',v:'Caducado sem venda'},{l:'Preço pedido',v:'€ 120.000'},{l:'Motivo',v:'Proprietário desistiu da venda'}]}
-};
+const fichas={};
 
 const estadoLabel={ativo:'Ativo',proposta:'Proposta aceite',cpcv:'CPCV assinado',vendido:'Vendido',antigo:'Antigo'};
 const estadoBadge={ativo:'bb',proposta:'ba',cpcv:'ba',vendido:'bg',antigo:'bgr'};
@@ -750,6 +707,65 @@ function categoriaDoImovel(f){
   if(f.estado==='vendido')return 'vendidos';
   if(f.estado==='antigo')return 'antigos';
   return 'ativos';
+}
+
+function renderDash(){
+  const all=Object.values(fichas);
+  const ativos=all.filter(f=>f.estado==='ativo'||f.estado==='proposta'||f.estado==='cpcv');
+  const vendidos=all.filter(f=>f.estado==='vendido');
+  const excl=ativos.filter(f=>f.regime==='Exclusivo').length;
+  const comissoes=ativos.reduce((s,f)=>{
+    const c=f.preco*(parseFloat(agencia.comissao||3)/100);
+    return s+c;
+  },0);
+  const cpcvVal=all.filter(f=>f.estado==='cpcv').reduce((s,f)=>s+f.preco*(parseFloat(agencia.comissao||3)/100),0);
+  const recebido=vendidos.reduce((s,f)=>s+(f.comissaoRecebida||0),0);
+
+  // KPIs
+  const el=id=>document.getElementById(id);
+  if(el('dash-ativos'))el('dash-ativos').textContent=ativos.length;
+  if(el('dash-ativos-sub'))el('dash-ativos-sub').textContent=ativos.length===0?'Sem imóveis na carteira':`${excl} exclusivos · ${ativos.length-excl} abertos`;
+  if(el('dash-comissoes'))el('dash-comissoes').textContent='€ '+Math.round(comissoes).toLocaleString('pt-PT');
+  if(el('dash-cpcv'))el('dash-cpcv').textContent='€ '+Math.round(cpcvVal).toLocaleString('pt-PT');
+  if(el('dash-recebido'))el('dash-recebido').textContent='€ '+Math.round(recebido).toLocaleString('pt-PT');
+  if(el('dash-recebido-sub'))el('dash-recebido-sub').textContent=vendidos.length+' vendas concluídas';
+
+  // Alertas
+  const alertasEl=el('dash-alertas');
+  if(alertasEl){
+    if(ativos.length===0){
+      alertasEl.innerHTML='<div style="padding:1rem;color:var(--text-secondary);font-size:13px;text-align:center"><i class="ti ti-check" style="color:var(--green)"></i> Sem alertas pendentes</div>';
+    } else {
+      alertasEl.innerHTML=ativos.slice(0,4).map(f=>`
+        <div class="fu"><div class="fd" style="background:var(--amber)"></div>
+        <div class="fi"><div class="ft">${f.ref} · ${f.morada||'—'}</div>
+        <div class="fs">${f.proprietario||'—'} · ${f.tipologia||''}</div></div></div>`).join('');
+    }
+  }
+
+  // Vendas
+  const vendasEl=el('dash-vendas');
+  if(vendasEl){
+    if(vendidos.length===0){
+      vendasEl.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas</td></tr>';
+    } else {
+      vendasEl.innerHTML=vendidos.map(f=>`<tr><td>${f.morada||f.ref}</td><td>${f.dataVenda||'—'}</td><td style="color:var(--green-dark);font-weight:600">€ ${(f.comissaoRecebida||0).toLocaleString('pt-PT')}</td></tr>`).join('');
+    }
+  }
+
+  // Carteira ativa
+  const carteiraEl=el('dash-carteira');
+  if(carteiraEl){
+    if(ativos.length===0){
+      carteiraEl.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem imóveis na carteira. <a href="#" onclick="go(\'carteira\',\'Carteira de imóveis\',\'\');return false">Adicionar imóvel →</a></td></tr>';
+    } else {
+      carteiraEl.innerHTML=ativos.slice(0,5).map(f=>{
+        const com=Math.round(f.preco*(parseFloat(agencia.comissao||3)/100));
+        const regBdg=f.regime==='Exclusivo'?'bg':'bgr';
+        return`<tr><td>${f.ref}</td><td>${f.morada||'—'}</td><td>€ ${Math.round(f.preco/1000)}k</td><td><span class="bdg ${regBdg}">${f.regime==='Exclusivo'?'Excl.':'Aberto'}</span></td><td style="color:var(--green-dark);font-weight:600">€ ${com.toLocaleString('pt-PT')}</td><td><span class="bdg ${estadoBadge[f.estado]||'bb'}">${estadoLabel[f.estado]||f.estado}</span></td></tr>`;
+      }).join('');
+    }
+  }
 }
 
 function renderCarteira(){
