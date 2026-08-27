@@ -339,6 +339,37 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 </div>
 <!-- ===== FIM ECRÃ LOGIN ===== -->
 
+<!-- ===== ECRÃ NOVA PASSWORD ===== -->
+<div id="reset-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:none;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:400px;padding:2rem;background:var(--surface-1);border-radius:16px;border:0.5px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.12)">
+    <div style="text-align:center;margin-bottom:2rem">
+      <svg width="140" height="30" viewBox="0 0 140 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#0B1F3A">LYV</text>
+        <circle cx="44" cy="19" r="2.8" fill="#C5A84B" opacity="0.8"/>
+        <text x="48" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#C5A84B">CMI</text>
+      </svg>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:6px">Definir nova password</div>
+    </div>
+    <div style="margin-bottom:1.2rem">
+      <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Nova password</label>
+      <input id="reset-pw1" type="password" placeholder="Mínimo 8 caracteres"
+        style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+    </div>
+    <div style="margin-bottom:1.5rem">
+      <label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px">Confirmar password</label>
+      <input id="reset-pw2" type="password" placeholder="Repetir a password"
+        style="width:100%;padding:.65rem .9rem;border:0.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+    </div>
+    <button onclick="authSetNewPassword()" id="reset-btn"
+      style="width:100%;padding:.75rem;background:#0B1F3A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">
+      Guardar password
+    </button>
+    <div id="reset-error" style="display:none;margin-top:.75rem;padding:.6rem .9rem;background:#FCEBEB;color:#A32D2D;border-radius:8px;font-size:13px"></div>
+    <div id="reset-success" style="display:none;margin-top:.75rem;padding:.6rem .9rem;background:#EAF3DE;color:#3B6D11;border-radius:8px;font-size:13px"></div>
+  </div>
+</div>
+<!-- ===== FIM ECRÃ NOVA PASSWORD ===== -->
+
 
 <div class="app">
 <div class="sb" style="display:none">
@@ -624,7 +655,26 @@ input[disabled]{opacity:.55;cursor:not-allowed}
   <button class="btn p" onclick="cfgSave()"><i class="ti ti-device-floppy"></i> Guardar alterações</button>
 </div>
 
-<div id="cfg-toast" style="display:none;margin-top:1rem;padding:.75rem 1rem;background:var(--color-background-success);color:var(--color-text-success);border-radius:8px;font-size:13px;border:1px solid var(--color-border-success)"><i class="ti ti-check"></i> Dados guardados. Todos os contratos actualizados.</div>
+<div id="cfg-toast" style="display:none;margin-top:1rem;padding:.75rem 1rem;background:#EAF3DE;color:#3B6D11;border-radius:8px;font-size:13px;border:1px solid #C0DD97"><i class="ti ti-check"></i> Dados guardados. Todos os contratos actualizados.</div>
+
+<!-- Secção alteração de password -->
+<div class="form-card" style="margin-top:1.5rem">
+  <div class="fc-title"><i class="ti ti-lock"></i>Segurança — Alterar password</div>
+  <div class="fg">
+    <div class="ff">
+      <label>Nova password</label>
+      <input id="cfg-pw1" type="password" placeholder="Mínimo 8 caracteres">
+    </div>
+    <div class="ff">
+      <label>Confirmar password</label>
+      <input id="cfg-pw2" type="password" placeholder="Repetir a password">
+    </div>
+  </div>
+  <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
+    <button class="btn p" onclick="cfgChangePassword()"><i class="ti ti-lock-check"></i> Alterar password</button>
+  </div>
+  <div id="cfg-pw-msg" style="display:none;margin-top:.75rem;padding:.6rem .9rem;border-radius:8px;font-size:13px"></div>
+</div>
 </div>
 </div>
 
@@ -2982,8 +3032,82 @@ cfgSave=async function(){
   await supa.from('agencias').upsert(payload,{onConflict:'user_id'});
 };
 
-// Botão logout na sidebar
+// Alterar password no Perfil da Agência
+async function cfgChangePassword(){
+  const pw1=document.getElementById('cfg-pw1').value;
+  const pw2=document.getElementById('cfg-pw2').value;
+  const msg=document.getElementById('cfg-pw-msg');
+  msg.style.display='none';
+  if(!pw1||pw1.length<8){
+    msg.style.cssText='display:block;background:#FCEBEB;color:#A32D2D;padding:.6rem .9rem;border-radius:8px;font-size:13px';
+    msg.textContent='A password deve ter pelo menos 8 caracteres.'; return;
+  }
+  if(pw1!==pw2){
+    msg.style.cssText='display:block;background:#FCEBEB;color:#A32D2D;padding:.6rem .9rem;border-radius:8px;font-size:13px';
+    msg.textContent='As passwords não coincidem.'; return;
+  }
+  const {error}=await supa.auth.updateUser({password:pw1});
+  if(error){
+    msg.style.cssText='display:block;background:#FCEBEB;color:#A32D2D;padding:.6rem .9rem;border-radius:8px;font-size:13px';
+    msg.textContent='Erro: '+error.message;
+  } else {
+    msg.style.cssText='display:block;background:#EAF3DE;color:#3B6D11;padding:.6rem .9rem;border-radius:8px;font-size:13px';
+    msg.textContent='✅ Password alterada com sucesso!';
+    document.getElementById('cfg-pw1').value='';
+    document.getElementById('cfg-pw2').value='';
+  }
+}
+
+// Definir nova password após reset por email
+async function authSetNewPassword(){
+  const pw1=document.getElementById('reset-pw1').value;
+  const pw2=document.getElementById('reset-pw2').value;
+  const err=document.getElementById('reset-error');
+  const suc=document.getElementById('reset-success');
+  const btn=document.getElementById('reset-btn');
+  err.style.display='none'; suc.style.display='none';
+  if(!pw1||pw1.length<8){
+    err.textContent='A password deve ter pelo menos 8 caracteres.';
+    err.style.display='block'; return;
+  }
+  if(pw1!==pw2){
+    err.textContent='As passwords não coincidem.';
+    err.style.display='block'; return;
+  }
+  btn.textContent='A guardar...'; btn.disabled=true;
+  const {error}=await supa.auth.updateUser({password:pw1});
+  if(error){
+    err.textContent='Erro: '+error.message;
+    err.style.display='block';
+    btn.textContent='Guardar password'; btn.disabled=false;
+  } else {
+    suc.textContent='✅ Password definida! A redirecionar...';
+    suc.style.display='block';
+    setTimeout(()=>{
+      document.getElementById('reset-screen').style.display='none';
+    },2000);
+  }
+}
+
+// Detectar link de reset/invite no URL
 document.addEventListener('DOMContentLoaded',()=>{
+  const hash=window.location.hash;
+  if(hash.includes('type=recovery')||hash.includes('type=invite')){
+    const checkSession=setInterval(async()=>{
+      const {data:{session}}=await supa.auth.getSession();
+      if(session){
+        clearInterval(checkSession);
+        document.getElementById('auth-screen').style.display='none';
+        const rs=document.getElementById('reset-screen');
+        rs.style.display='flex';
+        rs.style.alignItems='center';
+        rs.style.justifyContent='center';
+        history.replaceState(null,'',window.location.pathname);
+      }
+    },500);
+  }
+
+  // Botão logout na sidebar
   const sf=document.querySelector('.sf');
   if(sf){
     const logoutBtn=document.createElement('button');
