@@ -2910,8 +2910,8 @@ supa.auth.onAuthStateChange((event,session)=>{
 
 async function authLoadAgencia(userId){
   const {data}=await supa.from('agencias').select('*').eq('user_id',userId).single();
-  if(data){
-    // Preencher objeto agencia com dados da cloud
+  if(data && data.nome){
+    // Agência já configurada — preencher e ir para dashboard
     const map={
       nome:'nome',marca:'marca',nif:'nif',ami:'ami',morada:'morada',
       email:'email',telefone:'telefone',gerente:'gerente',
@@ -2922,6 +2922,20 @@ async function authLoadAgencia(userId){
     };
     Object.entries(map).forEach(([k,v])=>{if(data[v])agencia[k]=data[v];});
     cfgUpdateSidebar();
+  } else {
+    // Primeiro login — redirecionar para Perfil da Agência
+    setTimeout(()=>{
+      go('config','Perfil da Agência','Dados da mediadora · Seguro RC · Logotipo');
+      // Mostrar mensagem de boas-vindas
+      const toast=document.getElementById('cfg-toast');
+      if(toast){
+        toast.style.background='var(--bg-accent)';
+        toast.style.color='var(--text-accent)';
+        toast.style.border='1px solid var(--border-accent)';
+        toast.innerHTML='<i class="ti ti-hand-stop"></i> Bem-vindo ao LYVCMI! Preenche os dados da tua agência antes de começar.';
+        toast.style.display='block';
+      }
+    },300);
   }
 }
 
