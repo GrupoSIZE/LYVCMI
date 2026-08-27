@@ -2827,14 +2827,12 @@ async function cfgLoad(){
     const {data:{user}}=await supa.auth.getUser();
     if(user) await authLoadAgencia(user.id);
   }
-  // Preencher formulário com valores actuais do objeto agencia
+  // Só preenche campos que estão vazios (não interrompe edição do utilizador)
   CFG_FIELDS.forEach(k=>{
     const el=document.getElementById('cfg-'+k);
-    if(el)el.value=agencia[k]||'';
+    if(el && !el.value) el.value=agencia[k]||'';
   });
-  // Preview do logo
   cfgUpdateLogoPreview(agencia.logo);
-  // Input de ficheiro — listener
   const inp=document.getElementById('cfg-logo-input');
   if(inp&&!inp._bound){
     inp.addEventListener('change',function(){
@@ -2963,19 +2961,23 @@ async function authLogout(){
 }
 
 // Listener de sessão — controla o que é mostrado
+let _agenciaCarregada=false;
+
 supa.auth.onAuthStateChange((event,session)=>{
   const authScreen=document.getElementById('auth-screen');
   const appSb=document.querySelector('.sb');
   const appMain=document.querySelector('.main');
   if(session){
-    // Utilizador autenticado — mostra app, esconde login
     authScreen.style.display='none';
     if(appSb)appSb.style.display='';
     if(appMain)appMain.style.display='';
-    // Carregar perfil da agência do Supabase
-    authLoadAgencia(session.user.id);
+    // Só carrega a agência uma vez por sessão
+    if(!_agenciaCarregada){
+      _agenciaCarregada=true;
+      authLoadAgencia(session.user.id);
+    }
   } else {
-    // Não autenticado — mostra login, esconde app
+    _agenciaCarregada=false;
     authScreen.style.display='flex';
     if(appSb)appSb.style.display='none';
     if(appMain)appMain.style.display='none';
