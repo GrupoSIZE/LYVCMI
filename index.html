@@ -944,7 +944,7 @@ function selIm(ref){
   document.getElementById('f-edit-regime').value=f.regime||'Exclusivo';
   document.getElementById('f-edit-preco').value=f.preco||0;
   const simuladorPreco=document.getElementById('sp');if(simuladorPreco)simuladorPreco.value=f.preco||0;
-  document.getElementById('email-preview').style.display='none';
+  const emailPreview=document.getElementById('email-preview');if(emailPreview)emailPreview.style.display='none';
   fotoRender();
   if(simuladorPreco)sc();
 }
@@ -4478,7 +4478,7 @@ async function v24EnsureNegocio(doc,d){
     const bo=(d._outorgantes_comp||[]).find(x=>x.nome?.trim());if(bo)buyer=await v2FindOrCreateContact(bo);
   }
   if(ctx.temParceiro&&!ctx.parceiro.nome.trim())throw new Error('Indica a agência parceira.');const parceiro=ctx.temParceiro?await v24SaveParceiro(ctx):null;const {data:{user}}=await supa.auth.getUser();
-  const payload={agencia_id:currentAgenciaId,imovel_id:imovelId,comprador_id:buyer?.id||null,agente_responsavel_id:agenteAtual.id||null,origem:ctx.origem,parceiro_id:parceiro?.id||ctx.parceiro.id||null,nossa_posicao:ctx.temParceiro?ctx.nossaPosicao:null,tem_partilha:ctx.temParceiro,partilha_tipo:ctx.partilhaTipo,partilha_pct_nossa:ctx.nossaPct,partilha_pct_parceira:ctx.parceiraPct,partilha_estado:ctx.temParceiro?'rascunho':'nao_aplicavel',parceiro_nome:ctx.parceiro.nome||null,parceiro_nif:ctx.parceiro.nif||null,parceiro_ami:ctx.parceiro.ami||null,parceiro_representante:ctx.parceiro.rep||null,parceiro_email:ctx.parceiro.email||null,parceiro_telefone:ctx.parceiro.telefone||null,imovel_externo_ref:ctx.origem==='externo'?ref:null,imovel_externo_morada:ctx.origem==='externo'?morada:null,imovel_externo_tipologia:ctx.origem==='externo'?tipologia:null,imovel_externo_preco:ctx.origem==='externo'?preco:null,imovel_externo_artigo:ctx.origem==='externo'?artigo:null,imovel_externo_desc_predial:ctx.origem==='externo'?descpred:null,imovel_externo_onus:ctx.origem==='externo'?onus:null,preco_proposto:doc==='proposta'?Number(d['proposta-preco'])||null:null,created_by:user?.id||null};
+  const payload={agencia_id:currentAgenciaId,imovel_id:imovelId,comprador_id:buyer?.id||null,agente_responsavel_id:agenteAtual.id||null,origem:ctx.origem,parceiro_id:parceiro?.id||ctx.parceiro.id||null,nossa_posicao:ctx.temParceiro?ctx.nossaPosicao:null,tem_partilha:ctx.temParceiro,partilha_tipo:ctx.partilhaTipo,partilha_pct_nossa:ctx.nossaPct,partilha_pct_parceira:ctx.parceiraPct,partilha_estado:ctx.temParceiro?'rascunho':'nao_aplicavel',parceiro_nome:ctx.parceiro.nome||null,parceiro_nif:ctx.parceiro.nif||null,parceiro_ami:ctx.parceiro.ami||null,parceiro_representante:ctx.parceiro.rep||null,parceiro_email:ctx.parceiro.email||null,parceiro_telefone:ctx.parceiro.telefone||null,imovel_externo_ref:ctx.origem==='externo'?ref:null,imovel_externo_morada:ctx.origem==='externo'?morada:null,imovel_externo_tipologia:ctx.origem==='externo'?tipologia:null,imovel_externo_preco:ctx.origem==='externo'?preco:null,imovel_externo_artigo:ctx.origem==='externo'?artigo:null,imovel_externo_desc_predial:ctx.origem==='externo'?descpred:null,imovel_externo_onus:ctx.origem==='externo'?onus:null,preco_proposto:doc==='proposta'?Number(d['proposta-preco'])||null:null,comissao_total_pct:doc==='partilha'?(Number(d.comissaoPct)||null):undefined,created_by:user?.id||null};
   let row;if(hiddenId){const prev=await supa.from('negocios').select('partilha_estado').eq('id',hiddenId).single();if(!prev.error&&prev.data){payload.partilha_estado=ctx.temParceiro?(prev.data.partilha_estado==='nao_aplicavel'?'rascunho':prev.data.partilha_estado):'nao_aplicavel'}const q=await supa.from('negocios').update(payload).eq('id',hiddenId).select('*').single();if(q.error)throw q.error;row=q.data}else{const q=await supa.from('negocios').insert({...payload,estado:'aberto'}).select('*').single();if(q.error)throw q.error;row=q.data}
   const h=document.getElementById(doc==='partilha'?'pt-negocio-id':`${doc}-negocio-id`);if(h)h.value=row.id;await v24LoadParceiros();await v24LoadNegocios();return row;
 }
@@ -4975,7 +4975,7 @@ function v29DerivedPropertyState(n){
   if(n?.proposta_estado==='aceite'||n?.reserva_estado==='aceite')return'proposta';
   return'ativo';
 }
-function v29CpcvLocksCommercial(cpcv){return ['assinado','escritura_realizada'].includes(cpcv)}
+function v29CpcvLocksCommercial(cpcv){return cpcv==='escritura_realizada'}
 async function v29BusinessForProperty(propertyId){
   if(!propertyId||!currentAgenciaId)return null;
   const cached=(Array.isArray(v24Negocios)?v24Negocios:[]).filter(n=>n.imovel_id===propertyId&&n.estado!=='perdido').sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0];
@@ -5018,8 +5018,8 @@ const _v29OpenEstadoBase=v24OpenEstadoNegocio;
 v24OpenEstadoNegocio=function(id){
   _v29OpenEstadoBase(id);const n=v24Negocios.find(x=>x.id===id);if(!n)return;
   const p=document.getElementById('v24-est-proposta'),r=document.getElementById('v24-est-reserva'),c=document.getElementById('v24-est-cpcv'),body=document.getElementById('v24-est-body');
-  const locked=v29CpcvLocksCommercial(n.cpcv_estado);if(p)p.disabled=locked;if(r)r.disabled=locked;if(c)c.disabled=n.cpcv_estado==='escritura_realizada';
-  const note=document.createElement('div');note.className='v29-flow-note';note.innerHTML=locked?(n.cpcv_estado==='escritura_realizada'?'<strong>Venda concluída.</strong> A proposta, reserva e CPCV ficam bloqueados. Uma correção exige reabrir formalmente o negócio.':'<strong>CPCV assinado.</strong> A proposta e a reserva são histórico e já não devem ser alteradas. Se o preço mudar, deve ser formalizado no CPCV/adenda; não se reescreve a proposta aceite.'):'A proposta e a reserva são caminhos alternativos. Ao aceitar uma, a outra será encerrada. Depois da assinatura do CPCV, estes estados ficam bloqueados.';body?.appendChild(note);
+  const locked=v29CpcvLocksCommercial(n.cpcv_estado);if(p)p.disabled=locked;if(r)r.disabled=locked;if(c)c.disabled=locked;const share=document.getElementById('v24-est-partilha');if(share)share.disabled=locked;
+  const note=document.createElement('div');note.className='v29-flow-note';note.innerHTML=locked?'<strong>Venda concluída.</strong> Todos os estados ficam bloqueados. Para corrigir, é necessário reabrir formalmente o negócio.':n.cpcv_estado==='assinado'?'<strong>CPCV assinado.</strong> Podes corrigir os estados administrativos da Proposta ou Reserva. Essa correção não altera o conteúdo nem o preço do CPCV; uma renegociação deve ser formalizada por adenda ou novo CPCV.':'A proposta e a reserva são caminhos alternativos. Ao aceitar uma, a outra será encerrada. Todos os estados podem ser corrigidos até à realização da escritura.';body?.appendChild(note);
 };
 v24SaveEstadoNegocio=async function(id){
   const n=v24Negocios.find(x=>x.id===id);if(!n)return;
@@ -5067,8 +5067,20 @@ function v30DashboardModel(businesses=[]){
   const properties=Object.values(fichas||{}),year=new Date().getFullYear();
   const portfolio=properties.filter(f=>!['vendido','antigo'].includes(f.estado));
   const sold=properties.filter(f=>f.estado==='vendido'&&(!f.dataVendaDb||Number(String(f.dataVendaDb).slice(0,4))===year));
-  const pipeline=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado!=='escritura_realizada'&&(n.proposta_estado==='aceite'||n.reserva_estado==='aceite'||['pronto','enviado','assinado'].includes(n.cpcv_estado))).map(n=>({n,value:v28CommissionForBusiness(n)}));
-  const cpcv=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado==='assinado').map(n=>({n,value:v28CommissionForBusiness(n)}));
+  const cpcvBusiness=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado==='assinado');
+  const cpcvPropertyIds=new Set(cpcvBusiness.map(n=>n.imovel_id).filter(Boolean));
+  /* Carteira própria: comissão contratada no CMI enquanto ainda não chegou a CPCV. */
+  const ownForecast=portfolio.filter(f=>f.estado!=='cpcv'&&!cpcvPropertyIds.has(f.db_id)).map(f=>{
+    const related=businesses.filter(n=>n.imovel_id===f.db_id&&n.estado!=='perdido').sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0];
+    const base=Math.round((Number(f.preco)||0)*(Number(f.comissao_pct)||Number(agencia.comissao)||0)/100*100)/100;
+    const share=related?.tem_partilha&&related.partilha_estado==='aceite'?Math.max(0,Math.min(100,Number(related.partilha_pct_nossa)||0))/100:1;
+    return{f,n:related||null,value:Math.round(base*share*100)/100,source:'carteira'};
+  });
+  /* Imóvel de terceiro: só entra quando proposta/reserva ou partilha já foi aceite. */
+  const externalForecast=businesses.filter(n=>n.origem==='externo'&&n.estado!=='perdido'&&!['assinado','escritura_realizada'].includes(n.cpcv_estado)&&(n.proposta_estado==='aceite'||n.reserva_estado==='aceite'||n.partilha_estado==='aceite')).map(n=>({n,value:v28CommissionForBusiness(n),source:'externo'}));
+  const pipeline=[...ownForecast,...externalForecast];
+  const legacyCpcv=portfolio.filter(f=>f.estado==='cpcv'&&!cpcvPropertyIds.has(f.db_id)).map(f=>({f,value:Math.round((Number(f.preco)||0)*(Number(f.comissao_pct)||Number(agencia.comissao)||0)/100*100)/100,source:'carteira'}));
+  const cpcv=[...cpcvBusiness.map(n=>({n,value:v28CommissionForBusiness(n),source:'negocio'})),...legacyCpcv];
   const received=sold.map(f=>({f,value:Number(f.comissaoRecebida)||v28CommissionForProperty(f,businesses)}));
   return{properties,portfolio,sold,pipeline,cpcv,received,year};
 }
@@ -5086,7 +5098,7 @@ function v30PaintDashboard(m){
   if(e('dash-alertas'))e('dash-alertas').innerHTML=m.portfolio.length?m.portfolio.slice(0,4).map(f=>`<div class="fu"><div class="fd" style="background:var(--amber)"></div><div class="fi"><div class="ft">${v2Esc(f.ref)} · ${v2Esc(f.morada||'—')}</div><div class="fs">${v2Esc(f.proprietario||'—')} · ${v2Esc(f.tipologia||'')}</div></div></div>`).join(''):'<div style="padding:1rem;color:var(--text-secondary);font-size:13px;text-align:center"><i class="ti ti-check" style="color:var(--green)"></i> Sem alertas pendentes</div>';
   if(e('dash-vendas'))e('dash-vendas').innerHTML=m.received.length?m.received.map(x=>`<tr><td>${v2Esc(x.f.morada||x.f.ref)}</td><td>${v2Esc(x.f.dataVenda||'—')}</td><td style="color:var(--green-dark);font-weight:600">${fmtEurNumero(x.value)}</td></tr>`).join(''):`<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas em ${m.year}</td></tr>`;
   if(e('dash-carteira'))e('dash-carteira').innerHTML=m.portfolio.length?m.portfolio.slice(0,5).map(f=>`<tr><td>${v2Esc(f.ref)}</td><td>${v2Esc(f.morada||'—')}</td><td>€ ${Math.round(Number(f.preco||0)/1000)}k</td><td><span class="bdg ${f.regime==='Exclusivo'?'bg':'bgr'}">${f.regime==='Exclusivo'?'Excl.':'Aberto'}</span></td><td style="color:var(--green-dark);font-weight:600">${f.estado==='cpcv'||f.estado==='proposta'?'Em pipeline':'—'}</td><td><span class="bdg ${estadoBadge[f.estado]||'bb'}">${estadoLabel[f.estado]||f.estado}</span></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem imóveis em carteira.</td></tr>';
-  v28DashboardData={year:m.year,pipeline:m.pipeline.map(x=>({title:x.n.referencia||'Negócio',subtitle:v24NegocioImovel(x.n),value:x.value})),cpcv:m.cpcv.map(x=>({title:x.n.referencia||'Negócio',subtitle:v24NegocioImovel(x.n),value:x.value})),received:m.received.map(x=>({title:x.f.ref,subtitle:`${x.f.morada||'—'} · ${x.f.dataVenda||'—'}`,value:x.value}))};v28WireCards();
+  v28DashboardData={year:m.year,pipeline:m.pipeline.map(x=>({title:x.f?.ref||x.n?.referencia||'Negócio',subtitle:x.f?`${x.f.morada||'—'} · Carteira própria`:`${v24NegocioImovel(x.n)} · Imóvel de terceiro`,value:x.value})),cpcv:m.cpcv.map(x=>({title:x.f?.ref||x.n?.referencia||'Negócio',subtitle:x.f?x.f.morada||'—':v24NegocioImovel(x.n),value:x.value})),received:m.received.map(x=>({title:x.f.ref,subtitle:`${x.f.morada||'—'} · ${x.f.dataVenda||'—'}`,value:x.value}))};v28WireCards();
 }
 renderDash=function(){
   const run=++v30DashboardRun;const cached=Array.isArray(v24Negocios)?v24Negocios:[];v30PaintDashboard(v30DashboardModel(cached));
@@ -5097,7 +5109,7 @@ renderDash=function(){
 /* The card displays status; workflow changes happen only in Negócios. */
 function v30LockPropertyState(){
   const sel=document.getElementById('f-estado-sel'),note=document.getElementById('v26-state-note');if(!sel)return;sel.onchange=null;sel.disabled=true;sel.value=fichas[fichaAberta]?.estado||sel.value;sel.title='Estado calculado a partir do negócio.';
-  if(note){note.className='v30-state-note';note.innerHTML='<i class="ti ti-lock"></i> Alterar em Negócios'}
+  sel.style.display='none';let badge=document.getElementById('v30-property-state');if(!badge){badge=document.createElement('span');badge.id='v30-property-state';badge.className='bdg bb';sel.insertAdjacentElement('afterend',badge)}badge.textContent=estadoLabel[fichas[fichaAberta]?.estado]||fichas[fichaAberta]?.estado||'—';if(note)note.style.display='none';
 }
 const _v30OpenFichaBase=abrirFicha;
 abrirFicha=function(ref){_v30OpenFichaBase(ref);v30LockPropertyState();v23RenderChecklist(ref);setTimeout(()=>{if(ref===fichaAberta){v30LockPropertyState();v23RenderChecklist(ref)}},50)};
