@@ -2057,7 +2057,7 @@ ${excl?`<p style="text-indent:2em">1. O${S?'s':''} Segundo${S?'s':''} Contraente
 ${docH2('Cláusula 5.ª','Remuneração')}
 <p style="text-indent:2em">1. A remuneração só será devida se a Primeira Contraente conseguir interessado que concretize o negócio visado pelo presente contrato, nos termos e com as exceções previstas no art.º 19.º da Lei 15/2013, de 8 de fevereiro.</p>
 <p style="text-indent:2em">2. O${S?'s':''} Segundo${S?'s':''} Contraente${S?'s':''} obriga${S?'m':''}-se a pagar a título de remuneração:</p>
-<p style="text-indent:3em">a) A quantia de <strong>${comissao}%</strong> (${comissao==='3'?'três':'___'} por cento), calculada sobre o preço pelo qual o negócio é efetivamente concretizado, acrescida de IVA, à taxa legal em vigor, não sendo todavia a remuneração inferior a <strong>€ 5.000,00 (cinco mil euros)</strong>, acrescida de IVA, à taxa legal em vigor.</p>
+<p style="text-indent:3em">a) A quantia de <strong>${comissao}%</strong> (${percentagemPorExtenso(comissao)} por cento), calculada sobre o preço pelo qual o negócio é efetivamente concretizado, acrescida de IVA, à taxa legal em vigor, não sendo todavia a remuneração inferior a <strong>€ 5.000,00 (cinco mil euros)</strong>, acrescida de IVA, à taxa legal em vigor.</p>
 <p style="text-indent:3em">b) No caso de arrendamento, a remuneração terá o valor de _____________ €, acrescida de IVA à taxa legal.</p>
 <p style="text-indent:3em">c) No caso de arrendamento com opção de compra, à remuneração devida pelo arrendamento acresce ainda a remuneração prevista para a compra e venda, no momento em que a mesma se efetive.</p>
 <p style="text-indent:2em">3. Se for celebrado contrato-promessa e o sinal pago ao${S?'s':''} Segundo${S?'s':''} Contraente${S?'s':''} for igual ou superior a <strong>10% do valor do negócio</strong>, a comissão será integralmente paga na data da celebração do contrato-promessa. Nos restantes casos, a comissão será integralmente paga no dia da celebração do contrato definitivo.</p>
@@ -2129,7 +2129,7 @@ ${docH2('Cláusula 15.ª','Legislação Aplicável')}
 <p style="text-indent:2em;margin-bottom:1rem">Com produção plena de efeitos do Regulamento Geral de Proteção de Dados (RGPD), precisamos do seu consentimento livre, específico, consciente e informado. A nossa relação com os clientes assenta na confiança e transparência, assim, é da mais elevada importância que os seus dados se mantenham seguros.</p>
 
 <p style="font-weight:600;margin-bottom:.4rem">Dados pessoais recolhidos:</p>
-<p style="margin-left:2rem;line-height:2">☐ Nome completo<br>☐ Dados do Cartão de Cidadão / Bilhete de Identidade / Passaporte / Título de Residência<br>☐ Morada<br>☐ E-mail<br>☐ Número de Telefone/Telemóvel</p>
+<p style="margin-left:2rem;line-height:2">${vend.some(v=>v.nome)?'☒':'☐'} Nome completo<br>${vend.some(v=>v.doc||v.nif)?'☒':'☐'} Dados do Cartão de Cidadão / Bilhete de Identidade / Passaporte / Título de Residência<br>${vend.some(v=>v.morada)?'☒':'☐'} Morada<br>${vend.some(v=>v.email)?'☒':'☐'} E-mail<br>${vend.some(v=>v.telefone)?'☒':'☐'} Número de Telefone/Telemóvel</p>
 
 <p style="font-weight:600;margin-top:1rem;margin-bottom:.4rem">Provenientes de:</p>
 <p style="margin-left:2rem;line-height:2">☐ Reunião presencial com o cliente<br>☐ Email / Correio<br>☐ Chamada telefónica ou videochamada<br>☐ Mensagem escrita, gravada, ou de vídeo<br>☐ Outro _________________________</p>
@@ -2140,12 +2140,7 @@ ${docH2('Cláusula 15.ª','Legislação Aplicável')}
 
 <p style="text-indent:2em;margin-top:.75rem">Nos termos do RGPD, o titular de dados pessoais pode exercer o acesso aos dados pessoais que lhe digam respeito, bem como a sua retificação, eliminação, limitação do seu tratamento, portabilidade, ou opor-se ao seu tratamento, junto da "<strong>${ag.nome}</strong>". Ao titular de dados pessoais assiste-lhe, ainda, o direito a apresentar uma reclamação à <strong>Comissão Nacional de Proteção de Dados</strong> ou a outra autoridade de controlo competente nos termos da lei.</p>
 
-<p style="margin-top:1.5rem;text-indent:2em">Eu, _________________________________________________________________, titular do cartão de cidadão n.º __________________, emitido pela República Portuguesa, válido até ____/____/_____, dou o meu consentimento à recolha e ao tratamento dos meus dados pessoais nos termos supra referidos, razão pela qual assino a presente declaração.</p>
-
-<div style="margin-top:2rem;display:flex;gap:3rem">
-  <div style="flex:1">_________________________________<br><span style="font-size:11px">Local e Data</span></div>
-  <div style="flex:2">_________________________________<br><span style="font-size:11px">Assinatura do(a) Titular</span></div>
-</div>
+${(vend.length?vend:[{}]).map(v=>`<div style="margin-top:1.5rem;page-break-inside:avoid"><p style="text-indent:2em">Eu, <strong>${v.nome||'_________________________________________________'}</strong>${v.doc?`, titular do documento de identificação n.º <strong>${v.doc}</strong>`:''}${v.nif?`, NIF <strong>${v.nif}</strong>`:''}${v.morada?`, residente em <strong>${v.morada}</strong>`:''}, dou o meu consentimento à recolha e ao tratamento dos meus dados pessoais nos termos supra referidos, razão pela qual assino a presente declaração.</p><div style="margin-top:2rem;display:flex;gap:3rem"><div style="flex:1">_________________________________<br><span style="font-size:11px">Local e Data</span></div><div style="flex:2">_________________________________<br><span style="font-size:11px">Assinatura — ${v.nome||'Titular'}</span></div></div></div>`).join('')}
 <div style="margin-top:2rem;font-size:11px;color:#888;text-align:center"><strong>${ag.nome}</strong> | Licença AMI n.º ${ag.ami} | ${ag.email||''}</div>
 </div>
 
@@ -3881,6 +3876,10 @@ templateCmExcl=function(d,tipo){
   let html=_v21TemplateCmExclBase(clone,tipo);
   html=html.replace(/<strong>__LYVCMI_EMPRESA__<\/strong>, portador\(a\) do documento de identificação n\.º <strong>___<\/strong>, contribuinte fiscal n\.º <strong>___<\/strong>/,empresaTxt);
   html=html.replace(/<div style="margin-top:4px;font-size:11px">__LYVCMI_EMPRESA__<\/div>/,`<div style="margin-top:4px;font-size:11px">${v2Esc(e.denominacao||'')}</div>${reps[0]?.nome?`<div style="margin-top:2px;font-size:10px;color:#666">${v2Esc(reps[0].nome)} · ${v2Esc(reps[0].cargo||'Representante legal')}</div>`:''}`);
+  const rgpdChecks=`<p style="margin-left:2rem;line-height:2">${e.denominacao?'☒':'☐'} Nome completo / denominação<br>${e.registo||e.nif?'☒':'☐'} Dados de identificação / registo<br>${e.morada?'☒':'☐'} Morada / sede<br>${e.email?'☒':'☐'} E-mail<br>${e.telefone?'☒':'☐'} Número de Telefone/Telemóvel</p>`;
+  html=html.replace(/<p style="margin-left:2rem;line-height:2">[☐☒] Nome completo<br>[\s\S]*?Número de Telefone\/Telemóvel<\/p>/,rgpdChecks);
+  const consentimentos=(reps.length?reps:[{}]).map(r=>`<div style="margin-top:1.5rem;page-break-inside:avoid"><p style="text-indent:2em">Eu, <strong>${r.nome||'_________________________________________________'}</strong>${r.doc?`, titular do documento de identificação n.º <strong>${r.doc}</strong>`:''}${r.nif?`, NIF <strong>${r.nif}</strong>`:''}, na qualidade de <strong>${r.cargo||'representante legal'}</strong> de <strong>${e.denominacao||'_________________________'}</strong>, dou o meu consentimento à recolha e ao tratamento dos dados pessoais nos termos supra referidos, razão pela qual assino a presente declaração.</p><div style="margin-top:2rem;display:flex;gap:3rem"><div style="flex:1">_________________________________<br><span style="font-size:11px">Local e Data</span></div><div style="flex:2">_________________________________<br><span style="font-size:11px">Assinatura — ${r.nome||'Representante legal'}</span></div></div></div>`).join('');
+  html=html.replace(/<div style="margin-top:1\.5rem;page-break-inside:avoid"><p style="text-indent:2em">Eu, <strong>__LYVCMI_EMPRESA__<\/strong>[\s\S]*?<\/div><\/div>/,consentimentos);
   return html;
 };
 
@@ -4868,6 +4867,96 @@ abrirContratoBib=async function(id){const r=await _v26AbrirContratoBibBase(id);s
 
 /* Initial pass */
 document.addEventListener('DOMContentLoaded',()=>{v26EnsureEstadoHint();v26RelabelDocumentButtons()});
+</script>
+
+<style id="v28-dashboard-css">
+.mc.v28-clickable{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}.mc.v28-clickable:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(11,31,58,.10)}
+.v28-detail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-tertiary)}.v28-detail-row:last-child{border-bottom:0}.v28-detail-meta{font-size:12px;color:var(--text-secondary);margin-top:3px}.v28-detail-value{font-weight:700;white-space:nowrap;color:var(--green-dark)}
+</style>
+<script>
+/* ============================================================
+   LYVCMI V2.8 — consolidated financial dashboard
+   One calculation source for cards, details and sold properties.
+   ============================================================ */
+function percentagemPorExtenso(value){
+  const normalized=String(value??'').trim().replace(',','.');
+  const n=Number(normalized);if(!Number.isFinite(n))return '___';
+  const parts=normalized.split('.');let result=v25InteiroExtenso(Number(parts[0])||0);
+  if(parts[1]&&Number(parts[1]))result+=' vírgula '+parts[1].split('').map(x=>v25InteiroExtenso(Number(x))).join(' ');
+  return result;
+}
+function v28PropertyById(id){return Object.values(fichas||{}).find(f=>f.db_id===id)}
+function v28CommissionForBusiness(n){
+  const f=v28PropertyById(n.imovel_id);
+  const price=Number(n.preco_proposto)||Number(n.imovel_externo_preco)||Number(f?.preco)||0;
+  const pct=Number(n.comissao_total_pct)||Number(f?.comissao_pct)||0;
+  const share=n.tem_partilha?Math.max(0,Math.min(100,Number(n.partilha_pct_nossa)||0))/100:1;
+  return Math.round((price*pct/100*share+Number.EPSILON)*100)/100;
+}
+function v28CommissionForProperty(f,businesses=[]){
+  const related=businesses.filter(n=>n.imovel_id===f.db_id).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
+  const relevant=related.find(n=>n.cpcv_estado==='escritura_realizada')||related.find(n=>['assinado','enviado','pronto'].includes(n.cpcv_estado))||related[0];
+  if(relevant){const amount=v28CommissionForBusiness(relevant);if(amount>0)return amount}
+  return Math.round((Number(f.preco)||0)*(Number(f.comissao_pct)||0)/100*100)/100;
+}
+async function v28LoadFinance(){
+  if(!currentAgenciaId)return {businesses:[],properties:Object.values(fichas||{})};
+  try{const q=await supa.from('negocios').select('*').eq('agencia_id',currentAgenciaId);if(q.error)throw q.error;return {businesses:q.data||[],properties:Object.values(fichas||{})}}
+  catch(e){console.warn('dashboard finance',e);return {businesses:Array.isArray(v24Negocios)?v24Negocios:[],properties:Object.values(fichas||{})}}
+}
+function v28BuildDashboard(finance){
+  const year=new Date().getFullYear(),businesses=finance.businesses,properties=finance.properties;
+  const active=properties.filter(f=>f.estado==='ativo');
+  const pipeline=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado!=='escritura_realizada'&&(n.proposta_estado==='aceite'||n.reserva_estado==='aceite'||['pronto','enviado','assinado'].includes(n.cpcv_estado)));
+  const cpcv=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado==='assinado');
+  const sold=properties.filter(f=>f.estado==='vendido'&&(!f.dataVendaDb||Number(String(f.dataVendaDb).slice(0,4))===year));
+  const makeBusiness=n=>({title:n.referencia||'Negócio',subtitle:`${v24NegocioImovel(n)} · ${v24Lab('cpcv',n.cpcv_estado||'nao_iniciado')}`,value:v28CommissionForBusiness(n)});
+  const received=sold.map(f=>({title:f.ref||'Imóvel vendido',subtitle:`${f.morada||'—'} · ${f.dataVenda||'data não indicada'}`,value:Number(f.comissaoRecebida)||v28CommissionForProperty(f,businesses)}));
+  return {year,active,pipeline:pipeline.map(makeBusiness),cpcv:cpcv.map(makeBusiness),received};
+}
+function v28Sum(rows){return rows.reduce((sum,row)=>sum+(Number(row.value)||0),0)}
+let v28DashboardData=null;
+function v28EnsureDetailModal(){
+  if(document.getElementById('v28-detail-modal'))return;
+  const modal=document.createElement('div');modal.id='v28-detail-modal';modal.className='modal';modal.style.display='none';modal.innerHTML=`<div class="modal-box" style="max-width:680px"><div class="modal-head"><div><div class="modal-title" id="v28-detail-title"></div><div class="modal-sub" id="v28-detail-sub"></div></div><button class="modal-close" onclick="document.getElementById('v28-detail-modal').style.display='none'">×</button></div><div class="modal-body" id="v28-detail-body"></div></div>`;document.body.appendChild(modal);
+}
+function v28ShowDetail(kind){
+  if(!v28DashboardData)return;v28EnsureDetailModal();
+  const labels={pipeline:['Comissões previstas','Negócios aceites e em CPCV'],cpcv:['A receber (CPCV)','CPCV assinados que aguardam escritura'],received:[`Recebido ${v28DashboardData.year}`,'Vendas concluídas no ano']};
+  const rows=v28DashboardData[kind]||[],label=labels[kind];document.getElementById('v28-detail-title').textContent=label[0];document.getElementById('v28-detail-sub').textContent=label[1];
+  document.getElementById('v28-detail-body').innerHTML=rows.length?rows.map(r=>`<div class="v28-detail-row"><div><strong>${v2Esc(r.title)}</strong><div class="v28-detail-meta">${v2Esc(r.subtitle)}</div></div><div class="v28-detail-value">${fmtEurNumero(r.value)}</div></div>`).join(''):'<div class="bib-empty">Não existem registos que cumpram estes critérios.</div>';
+  document.getElementById('v28-detail-modal').style.display='flex';
+}
+function v28WireCards(){
+  [['dash-comissoes','pipeline'],['dash-cpcv','cpcv'],['dash-recebido','received']].forEach(([id,kind])=>{const card=document.getElementById(id)?.closest('.mc');if(card&&!card.dataset.v28){card.dataset.v28='1';card.classList.add('v28-clickable');card.tabIndex=0;card.onclick=()=>v28ShowDetail(kind);card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();v28ShowDetail(kind)}}}});
+}
+const _v28RenderDashBase=renderDash;
+renderDash=async function(){
+  _v28RenderDashBase();const data=v28BuildDashboard(await v28LoadFinance());v28DashboardData=data;
+  const excl=data.active.filter(f=>f.regime==='Exclusivo').length;
+  document.getElementById('dash-ativos').textContent=data.active.length;
+  document.getElementById('dash-ativos-sub').textContent=data.active.length?`${excl} exclusivos · ${data.active.length-excl} abertos`:'Sem imóveis ativos';
+  document.getElementById('dash-comissoes').textContent=fmtEurNumero(v28Sum(data.pipeline));
+  document.getElementById('dash-cpcv').textContent=fmtEurNumero(v28Sum(data.cpcv));
+  document.getElementById('dash-recebido').textContent=fmtEurNumero(v28Sum(data.received));
+  document.querySelector('#dash-recebido')?.closest('.mc')?.querySelector('.mcl').replaceChildren(`Recebido ${data.year}`);
+  document.getElementById('dash-recebido-sub').textContent=`${data.received.length} venda${data.received.length===1?'':'s'} concluída${data.received.length===1?'':'s'} em ${data.year}`;
+  const sales=document.getElementById('dash-vendas');if(sales)sales.innerHTML=data.received.length?data.received.map(r=>`<tr><td>${v2Esc(r.subtitle.split(' · ')[0])}</td><td>${v2Esc(r.subtitle.split(' · ')[1]||'—')}</td><td style="color:var(--green-dark);font-weight:600">${fmtEurNumero(r.value)}</td></tr>`).join(''):`<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas em ${data.year}</td></tr>`;
+  v28WireCards();
+};
+mudarEstadoImovel=async function(){
+  if(!fichaAberta||!currentAgenciaId)return;const f=fichas[fichaAberta],sel=document.getElementById('f-estado-sel');if(!f||!sel)return;
+  const novo=sel.value,anterior=f.estado;if(novo===anterior)return;const note=document.getElementById('v26-state-note');sel.classList.add('v26-saving');if(note)note.textContent='A guardar…';
+  try{
+    if(!f.db_id)throw new Error('Guarda primeiro a ficha do imóvel.');const finance=await v28LoadFinance();const dataVenda=novo==='vendido'?(f.dataVendaDb||new Date().toISOString().slice(0,10)):null;
+    const payload={estado:novo,data_venda:dataVenda,updated_at:new Date().toISOString()};if(novo==='vendido'&&!Number(f.comissaoRecebida))payload.comissao_recebida=v28CommissionForProperty(f,finance.businesses);
+    const {data,error}=await supa.from('imoveis').update(payload).eq('id',f.db_id).select('*').single();if(error)throw error;
+    f.estado=data.estado||novo;f.dataVendaDb=data.data_venda||null;f.dataVenda=data.data_venda?v2DatePT(data.data_venda):'';f.comissaoRecebida=Number(data.comissao_recebida)||0;
+    await v2LoadImoveis();renderCarteira();renderDash();if(fichaAberta&&fichas[fichaAberta]){selIm(fichaAberta);v22SetFichaEditing(v22FichaEditing)}if(note)note.textContent='Estado guardado';mostrarToast('Estado do imóvel atualizado.','ok');
+  }catch(e){console.error(e);sel.value=anterior;if(note)note.textContent='Não guardado';mostrarToast('Erro ao guardar estado: '+(e.message||e),'err')}
+  finally{sel.classList.remove('v26-saving');setTimeout(()=>{if(note)note.textContent='Guarda automaticamente'},1800)}
+};
+document.addEventListener('DOMContentLoaded',()=>{v28EnsureDetailModal();v28WireCards()});
 </script>
 
 </body>
