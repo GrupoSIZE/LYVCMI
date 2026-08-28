@@ -5055,5 +5055,63 @@ v23RenderChecklist=function(ref=fichaAberta){
 };
 </script>
 
+<style id="v30-authoritative-css">
+#f-estado-sel:disabled{appearance:none;-webkit-appearance:none;background:var(--bg-secondary)!important;border-color:var(--border-tertiary)!important;color:var(--text-primary)!important;font-weight:650;opacity:1!important;cursor:default!important}.v30-state-note{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-secondary)}
+</style>
+<script>
+/* ============================================================
+   LYVCMI V3.0 — authoritative renderers (no legacy chaining)
+   ============================================================ */
+let v30DashboardRun=0;
+function v30DashboardModel(businesses=[]){
+  const properties=Object.values(fichas||{}),year=new Date().getFullYear();
+  const portfolio=properties.filter(f=>!['vendido','antigo'].includes(f.estado));
+  const sold=properties.filter(f=>f.estado==='vendido'&&(!f.dataVendaDb||Number(String(f.dataVendaDb).slice(0,4))===year));
+  const pipeline=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado!=='escritura_realizada'&&(n.proposta_estado==='aceite'||n.reserva_estado==='aceite'||['pronto','enviado','assinado'].includes(n.cpcv_estado))).map(n=>({n,value:v28CommissionForBusiness(n)}));
+  const cpcv=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado==='assinado').map(n=>({n,value:v28CommissionForBusiness(n)}));
+  const received=sold.map(f=>({f,value:Number(f.comissaoRecebida)||v28CommissionForProperty(f,businesses)}));
+  return{properties,portfolio,sold,pipeline,cpcv,received,year};
+}
+function v30PaintDashboard(m){
+  const e=id=>document.getElementById(id),sum=rows=>rows.reduce((s,x)=>s+(Number(x.value)||0),0),excl=m.portfolio.filter(f=>f.regime==='Exclusivo').length;
+  if(e('dash-ativos'))e('dash-ativos').textContent=m.portfolio.length;
+  const activeLabel=e('dash-ativos')?.closest('.mc')?.querySelector('.mcl');if(activeLabel)activeLabel.textContent='Imóveis em carteira';
+  if(e('dash-ativos-sub'))e('dash-ativos-sub').textContent=m.portfolio.length?`${excl} exclusivos · ${m.portfolio.length-excl} abertos`:'Sem imóveis em carteira';
+  if(e('dash-comissoes'))e('dash-comissoes').textContent=fmtEurNumero(sum(m.pipeline));
+  const forecastSub=e('dash-comissoes')?.closest('.mc')?.querySelector('.mcs2');if(forecastSub)forecastSub.textContent='Negócios aceites e CPCV';
+  if(e('dash-cpcv'))e('dash-cpcv').textContent=fmtEurNumero(sum(m.cpcv));
+  if(e('dash-recebido'))e('dash-recebido').textContent=fmtEurNumero(sum(m.received));
+  const receivedLabel=e('dash-recebido')?.closest('.mc')?.querySelector('.mcl');if(receivedLabel)receivedLabel.textContent=`Recebido ${m.year}`;
+  if(e('dash-recebido-sub'))e('dash-recebido-sub').textContent=`${m.received.length} venda${m.received.length===1?'':'s'} concluída${m.received.length===1?'':'s'} em ${m.year}`;
+  if(e('dash-alertas'))e('dash-alertas').innerHTML=m.portfolio.length?m.portfolio.slice(0,4).map(f=>`<div class="fu"><div class="fd" style="background:var(--amber)"></div><div class="fi"><div class="ft">${v2Esc(f.ref)} · ${v2Esc(f.morada||'—')}</div><div class="fs">${v2Esc(f.proprietario||'—')} · ${v2Esc(f.tipologia||'')}</div></div></div>`).join(''):'<div style="padding:1rem;color:var(--text-secondary);font-size:13px;text-align:center"><i class="ti ti-check" style="color:var(--green)"></i> Sem alertas pendentes</div>';
+  if(e('dash-vendas'))e('dash-vendas').innerHTML=m.received.length?m.received.map(x=>`<tr><td>${v2Esc(x.f.morada||x.f.ref)}</td><td>${v2Esc(x.f.dataVenda||'—')}</td><td style="color:var(--green-dark);font-weight:600">${fmtEurNumero(x.value)}</td></tr>`).join(''):`<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas em ${m.year}</td></tr>`;
+  if(e('dash-carteira'))e('dash-carteira').innerHTML=m.portfolio.length?m.portfolio.slice(0,5).map(f=>`<tr><td>${v2Esc(f.ref)}</td><td>${v2Esc(f.morada||'—')}</td><td>€ ${Math.round(Number(f.preco||0)/1000)}k</td><td><span class="bdg ${f.regime==='Exclusivo'?'bg':'bgr'}">${f.regime==='Exclusivo'?'Excl.':'Aberto'}</span></td><td style="color:var(--green-dark);font-weight:600">${f.estado==='cpcv'||f.estado==='proposta'?'Em pipeline':'—'}</td><td><span class="bdg ${estadoBadge[f.estado]||'bb'}">${estadoLabel[f.estado]||f.estado}</span></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem imóveis em carteira.</td></tr>';
+  v28DashboardData={year:m.year,pipeline:m.pipeline.map(x=>({title:x.n.referencia||'Negócio',subtitle:v24NegocioImovel(x.n),value:x.value})),cpcv:m.cpcv.map(x=>({title:x.n.referencia||'Negócio',subtitle:v24NegocioImovel(x.n),value:x.value})),received:m.received.map(x=>({title:x.f.ref,subtitle:`${x.f.morada||'—'} · ${x.f.dataVenda||'—'}`,value:x.value}))};v28WireCards();
+}
+renderDash=function(){
+  const run=++v30DashboardRun;const cached=Array.isArray(v24Negocios)?v24Negocios:[];v30PaintDashboard(v30DashboardModel(cached));
+  if(!currentAgenciaId)return;
+  supa.from('negocios').select('*').eq('agencia_id',currentAgenciaId).then(q=>{if(run!==v30DashboardRun||q.error)return;v24Negocios=q.data||[];v30PaintDashboard(v30DashboardModel(v24Negocios))}).catch(e=>console.warn('dashboard',e));
+};
+
+/* The card displays status; workflow changes happen only in Negócios. */
+function v30LockPropertyState(){
+  const sel=document.getElementById('f-estado-sel'),note=document.getElementById('v26-state-note');if(!sel)return;sel.onchange=null;sel.disabled=true;sel.value=fichas[fichaAberta]?.estado||sel.value;sel.title='Estado calculado a partir do negócio.';
+  if(note){note.className='v30-state-note';note.innerHTML='<i class="ti ti-lock"></i> Alterar em Negócios'}
+}
+const _v30OpenFichaBase=abrirFicha;
+abrirFicha=function(ref){_v30OpenFichaBase(ref);v30LockPropertyState();v23RenderChecklist(ref);setTimeout(()=>{if(ref===fichaAberta){v30LockPropertyState();v23RenderChecklist(ref)}},50)};
+const _v30SelImBase=selIm;
+selIm=function(ref){_v30SelImBase(ref);v30LockPropertyState();v23RenderChecklist(ref)};
+mudarEstadoImovel=function(){v30LockPropertyState();mostrarToast('A fase comercial é alterada em Negócios, não na ficha do imóvel.','err')};
+const _v30SetEditingBase=v22SetFichaEditing;
+v22SetFichaEditing=function(editing){_v30SetEditingBase(editing);v30LockPropertyState()};
+
+/* Force the grouped checklist after old async loads finish. */
+const _v30LoadDocsBase=v23LoadDocumentosImovel;
+v23LoadDocumentosImovel=async function(ref){await _v30LoadDocsBase(ref);if(ref===fichaAberta)v23RenderChecklist(ref)};
+document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{renderDash();if(fichaAberta){v30LockPropertyState();v23RenderChecklist(fichaAberta)}},100));
+</script>
+
 </body>
 </html>
