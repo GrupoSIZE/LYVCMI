@@ -1,0 +1,15 @@
+PACOTE DE PUBLICAÇÃO LYV.CMI
+
+Conteúdo:
+- index.html: site institucional público.
+- app/index.html: área reservada LYV.CMI.
+- vercel.json: configuração da publicação.
+
+No GitHub, substitua o conteúdo atual do repositório pelos três elementos acima,
+mantendo a pasta "app". A Vercel publicará automaticamente:
+
+https://www.lyvcmi.com/       Site institucional
+https://www.lyvcmi.com/app/   Área reservada
+
+Antes de publicar, confirme que o endereço hello@lyvcmi.com existe. Caso não exista,
+substitua-o no index.html pelo endereço comercial correto.
