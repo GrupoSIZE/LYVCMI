@@ -5082,7 +5082,7 @@ function v30DashboardModel(businesses=[]){
   const legacyCpcv=portfolio.filter(f=>f.estado==='cpcv'&&!cpcvPropertyIds.has(f.db_id)).map(f=>({f,value:Math.round((Number(f.preco)||0)*(Number(f.comissao_pct)||Number(agencia.comissao)||0)/100*100)/100,source:'carteira'}));
   const cpcv=[...cpcvBusiness.map(n=>({n,value:v28CommissionForBusiness(n),source:'negocio'})),...legacyCpcv];
   const received=sold.map(f=>({f,value:Number(f.comissaoRecebida)||v28CommissionForProperty(f,businesses)}));
-  return{properties,portfolio,sold,pipeline,cpcv,received,year};
+  return{properties,portfolio,sold,pipeline,cpcv,received,businesses,year};
 }
 function v30PaintDashboard(m){
   const e=id=>document.getElementById(id),sum=rows=>rows.reduce((s,x)=>s+(Number(x.value)||0),0),excl=m.portfolio.filter(f=>f.regime==='Exclusivo').length;
@@ -5095,10 +5095,13 @@ function v30PaintDashboard(m){
   if(e('dash-recebido'))e('dash-recebido').textContent=fmtEurNumero(sum(m.received));
   const receivedLabel=e('dash-recebido')?.closest('.mc')?.querySelector('.mcl');if(receivedLabel)receivedLabel.textContent=`Recebido ${m.year}`;
   if(e('dash-recebido-sub'))e('dash-recebido-sub').textContent=`${m.received.length} venda${m.received.length===1?'':'s'} concluída${m.received.length===1?'':'s'} em ${m.year}`;
-  if(e('dash-alertas'))e('dash-alertas').innerHTML=m.portfolio.length?m.portfolio.slice(0,4).map(f=>`<div class="fu"><div class="fd" style="background:var(--amber)"></div><div class="fi"><div class="ft">${v2Esc(f.ref)} · ${v2Esc(f.morada||'—')}</div><div class="fs">${v2Esc(f.proprietario||'—')} · ${v2Esc(f.tipologia||'')}</div></div></div>`).join(''):'<div style="padding:1rem;color:var(--text-secondary);font-size:13px;text-align:center"><i class="ti ti-check" style="color:var(--green)"></i> Sem alertas pendentes</div>';
+  const alerts=[];(m.businesses||[]).forEach(n=>{if(n.cpcv_estado==='assinado')alerts.push({title:`${n.referencia||'Negócio'} · ${v24NegocioImovel(n)}`,text:'CPCV assinado — agendar escritura'});else if(n.cpcv_estado==='enviado')alerts.push({title:`${n.referencia||'Negócio'} · ${v24NegocioImovel(n)}`,text:'CPCV enviado — confirmar assinatura'});else if(n.proposta_estado==='enviada'||n.reserva_estado==='enviada')alerts.push({title:`${n.referencia||'Negócio'} · ${v24NegocioImovel(n)}`,text:'Proposta/reserva enviada — aguardar resposta'});if(n.tem_partilha&&n.partilha_estado==='enviada')alerts.push({title:`${n.referencia||'Negócio'} · ${n.parceiro_nome||'Agência parceira'}`,text:'Partilha enviada — confirmar aceitação'})});
+  m.portfolio.forEach(f=>{const missing=(f.docs||[]).filter(d=>d.s==='miss').length;if(missing)alerts.push({title:`${f.ref} · ${f.morada||'—'}`,text:`Dossier documental: ${missing} documento${missing===1?'':'s'} em falta`})});
+  const alertsTitle=e('dash-alertas')?.closest('.card')?.querySelector('.cht');if(alertsTitle)alertsTitle.innerHTML='<i class="ti ti-list-check"></i>Ações pendentes';
+  if(e('dash-alertas'))e('dash-alertas').innerHTML=alerts.length?alerts.slice(0,6).map(a=>`<div class="fu"><div class="fd" style="background:var(--amber)"></div><div class="fi"><div class="ft">${v2Esc(a.title)}</div><div class="fs">${v2Esc(a.text)}</div></div></div>`).join(''):'<div style="padding:1rem;color:var(--text-secondary);font-size:13px;text-align:center"><i class="ti ti-check" style="color:var(--green)"></i> Sem ações pendentes</div>';
   if(e('dash-vendas'))e('dash-vendas').innerHTML=m.received.length?m.received.map(x=>`<tr><td>${v2Esc(x.f.morada||x.f.ref)}</td><td>${v2Esc(x.f.dataVenda||'—')}</td><td style="color:var(--green-dark);font-weight:600">${fmtEurNumero(x.value)}</td></tr>`).join(''):`<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas em ${m.year}</td></tr>`;
   if(e('dash-carteira'))e('dash-carteira').innerHTML=m.portfolio.length?m.portfolio.slice(0,5).map(f=>`<tr><td>${v2Esc(f.ref)}</td><td>${v2Esc(f.morada||'—')}</td><td>€ ${Math.round(Number(f.preco||0)/1000)}k</td><td><span class="bdg ${f.regime==='Exclusivo'?'bg':'bgr'}">${f.regime==='Exclusivo'?'Excl.':'Aberto'}</span></td><td style="color:var(--green-dark);font-weight:600">${f.estado==='cpcv'||f.estado==='proposta'?'Em pipeline':'—'}</td><td><span class="bdg ${estadoBadge[f.estado]||'bb'}">${estadoLabel[f.estado]||f.estado}</span></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem imóveis em carteira.</td></tr>';
-  v28DashboardData={year:m.year,pipeline:m.pipeline.map(x=>({title:x.f?.ref||x.n?.referencia||'Negócio',subtitle:x.f?`${x.f.morada||'—'} · Carteira própria`:`${v24NegocioImovel(x.n)} · Imóvel de terceiro`,value:x.value})),cpcv:m.cpcv.map(x=>({title:x.f?.ref||x.n?.referencia||'Negócio',subtitle:x.f?x.f.morada||'—':v24NegocioImovel(x.n),value:x.value})),received:m.received.map(x=>({title:x.f.ref,subtitle:`${x.f.morada||'—'} · ${x.f.dataVenda||'—'}`,value:x.value}))};v28WireCards();
+  v28DashboardData={year:m.year,portfolio:m.portfolio.map(f=>({title:f.ref,subtitle:`${f.morada||'—'} · ${estadoLabel[f.estado]||f.estado}`,value:Number(f.preco)||0})),pipeline:m.pipeline.map(x=>({title:x.f?.ref||x.n?.referencia||'Negócio',subtitle:x.f?`${x.f.morada||'—'} · Carteira própria`:`${v24NegocioImovel(x.n)} · Imóvel de terceiro`,value:x.value})),cpcv:m.cpcv.map(x=>({title:x.f?.ref||x.n?.referencia||'Negócio',subtitle:x.f?x.f.morada||'—':v24NegocioImovel(x.n),value:x.value})),received:m.received.map(x=>({title:x.f.ref,subtitle:`${x.f.morada||'—'} · ${x.f.dataVenda||'—'}`,value:x.value}))};v33WireDashboardCards();
 }
 renderDash=function(){
   const run=++v30DashboardRun;const cached=Array.isArray(v24Negocios)?v24Negocios:[];v30PaintDashboard(v30DashboardModel(cached));
@@ -5168,6 +5171,25 @@ function v32PaymentBreakdown(d,doc){
 }
 function v32WrapPaymentTemplate(base,doc){return function(d){let html=base(d),detail=v32PaymentBreakdown(d,doc);return detail?html.replace('<div class="doc-footer-line">',detail+'<div class="doc-footer-line">'):html}}
 templateReserva=v32WrapPaymentTemplate(templateReserva,'reserva');templateProposta=v32WrapPaymentTemplate(templateProposta,'proposta');templateCpcv=v32WrapPaymentTemplate(templateCpcv,'cpcv');
+</script>
+
+<style id="v33-dashboard-details-css">
+.mc.v33-detail-card{cursor:pointer;position:relative}.mc.v33-detail-card:hover{transform:translateY(-2px);box-shadow:0 9px 25px rgba(11,31,58,.11)}.mc.v33-detail-card:after{content:'Ver detalhes';position:absolute;right:13px;bottom:9px;font-size:9.5px;color:var(--text-tertiary)}#v33-detail-overlay{display:none;position:fixed;inset:0;z-index:12000;background:rgba(12,22,30,.62);align-items:center;justify-content:center;padding:18px}.v33-modal{width:min(680px,100%);max-height:82vh;background:#fff;border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.30);overflow:hidden}.v33-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:18px 20px;border-bottom:1px solid var(--border-tertiary)}.v33-title{font-size:16px;font-weight:700}.v33-sub{font-size:11px;color:var(--text-secondary);margin-top:3px}.v33-body{padding:8px 20px 18px;overflow:auto;max-height:65vh}.v33-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px;padding:13px 0;border-bottom:1px solid var(--border-tertiary)}.v33-row:last-child{border-bottom:0}.v33-row-sub{font-size:11px;color:var(--text-secondary);margin-top:3px}.v33-value{font-weight:700;color:var(--green-dark);white-space:nowrap}.v33-empty{text-align:center;padding:30px 10px;color:var(--text-secondary);font-size:13px}
+</style>
+<script>
+/* LYVCMI V3.3 — deterministic detail modal for every dashboard card. */
+function v33EnsureModal(){
+  if(document.getElementById('v33-detail-overlay'))return;const overlay=document.createElement('div');overlay.id='v33-detail-overlay';overlay.innerHTML=`<div class="v33-modal"><div class="v33-head"><div><div class="v33-title" id="v33-detail-title"></div><div class="v33-sub" id="v33-detail-sub"></div></div><button class="btn" onclick="v33CloseDetails()"><i class="ti ti-x"></i></button></div><div class="v33-body" id="v33-detail-body"></div></div>`;overlay.addEventListener('click',e=>{if(e.target===overlay)v33CloseDetails()});document.body.appendChild(overlay);
+}
+function v33CloseDetails(){const o=document.getElementById('v33-detail-overlay');if(o)o.style.display='none'}
+function v33ShowDetails(kind){
+  v33EnsureModal();const d=v28DashboardData||{},config={portfolio:['Imóveis em carteira','Imóveis disponíveis, em proposta ou em CPCV'],pipeline:['Comissões previstas','Carteira própria fora de CPCV + negócios externos elegíveis'],cpcv:['A receber (CPCV)','Comissões associadas a CPCV assinados'],received:[`Recebido ${d.year||new Date().getFullYear()}`,'Vendas concluídas e comissões recebidas no ano']},rows=d[kind]||[],cfg=config[kind];
+  document.getElementById('v33-detail-title').textContent=cfg[0];document.getElementById('v33-detail-sub').textContent=cfg[1];document.getElementById('v33-detail-body').innerHTML=rows.length?rows.map(r=>`<div class="v33-row"><div><strong>${v2Esc(r.title||'—')}</strong><div class="v33-row-sub">${v2Esc(r.subtitle||'')}</div></div><div class="v33-value">${kind==='portfolio'?fmtEurNumero(r.value):fmtEurNumero(r.value)}</div></div>`).join(''):'<div class="v33-empty">Não existem registos neste grupo.</div>';document.getElementById('v33-detail-overlay').style.display='flex';
+}
+function v33WireDashboardCards(){
+  [['dash-ativos','portfolio'],['dash-comissoes','pipeline'],['dash-cpcv','cpcv'],['dash-recebido','received']].forEach(([id,kind])=>{const card=document.getElementById(id)?.closest('.mc');if(!card)return;card.classList.add('v33-detail-card');card.tabIndex=0;card.setAttribute('role','button');card.onclick=()=>v33ShowDetails(kind);card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();v33ShowDetails(kind)}}});
+}
+document.addEventListener('DOMContentLoaded',()=>{v33EnsureModal();v33WireDashboardCards()});
 </script>
 
 </body>
