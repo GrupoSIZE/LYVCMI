@@ -10,6 +10,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{
+  --brand-navy:#0B2239;
+  --brand-jade:#16A179;
+  --brand-jade-dark:#0D7559;
   --green:#1D9E75;
   --green-dark:#0F6E56;
   --green-light:#E1F5EE;
@@ -39,10 +42,15 @@ body{font-family:var(--font-sans);background:var(--bg-tertiary);color:var(--text
 .app{display:flex;height:100vh;width:100%;overflow:hidden}
 .sb{width:215px;flex-shrink:0;border-right:0.5px solid var(--border-tertiary);display:flex;flex-direction:column;background:var(--bg-primary);overflow-y:auto}
 .logo{padding:1rem 1.1rem 0.9rem;border-bottom:0.5px solid var(--border-tertiary)}
-.lm{display:flex;align-items:baseline;gap:5px}
+.lm{display:flex;align-items:center;gap:9px}
 .l1{font-size:21px;font-weight:600;letter-spacing:-0.4px;color:var(--text-primary)}
 .l2{font-size:21px;font-weight:600;letter-spacing:-0.4px;color:var(--green)}
 .lt{font-size:10.5px;color:var(--text-tertiary);margin-top:2px}
+.lyv-brand{display:inline-flex;align-items:center;gap:9px;color:var(--brand-navy);font-family:var(--font-sans);font-weight:750;letter-spacing:-.7px;line-height:1;white-space:nowrap}
+.lyv-brand-mark{width:28px;height:28px;display:grid;grid-template-columns:repeat(2,1fr);gap:3px;padding:5px;border-radius:8px;background:var(--brand-navy);box-shadow:0 5px 14px rgba(11,34,57,.14)}
+.lyv-brand-mark i{display:block;border-radius:2px;background:#fff;opacity:.92}.lyv-brand-mark i:last-child{background:var(--brand-jade)}
+.lyv-brand-word{font-size:21px}.lyv-brand-word b{color:var(--brand-jade);font-weight:800}
+.lyv-brand.login{gap:11px}.lyv-brand.login .lyv-brand-mark{width:34px;height:34px;padding:6px;border-radius:10px}.lyv-brand.login .lyv-brand-word{font-size:27px;letter-spacing:-1px}
 .ng{padding:0.6rem 0 0.2rem}
 .nl{padding:0 1rem 0.3rem;font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:0.7px;text-transform:uppercase}
 .ni{display:flex;align-items:center;gap:8px;padding:7px 1rem;font-size:13px;color:var(--text-secondary);cursor:pointer;border-left:2px solid transparent;transition:all .1s;white-space:nowrap}
@@ -285,12 +293,8 @@ input[disabled]{opacity:.55;cursor:not-allowed}
   <div style="width:100%;max-width:400px;padding:2rem;background:var(--surface-1);border-radius:16px;border:0.5px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.12)">
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:2rem">
-      <svg width="140" height="30" viewBox="0 0 140 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <text x="0" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#0B1F3A">LYV</text>
-        <circle cx="44" cy="19" r="2.8" fill="#C5A84B" opacity="0.8"/>
-        <text x="48" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#C5A84B">CMI</text>
-      </svg>
-      <div style="font-size:13px;color:var(--text-secondary);margin-top:6px">Back-office do mediador AMI</div>
+      <div class="lyv-brand login" style="justify-content:center"><span class="lyv-brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lyv-brand-word">LYV<b>.</b>CMI</span></div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:9px">Da angariação à escritura.</div>
     </div>
 
     <!-- Tabs login / recuperar -->
@@ -373,7 +377,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
     </div>
 
     <div style="text-align:center;margin-top:1.5rem;font-size:11px;color:var(--text-secondary)">
-      LYVCMI · Back-office do mediador AMI
+      LYV.CMI · Gestão imobiliária ligada
     </div>
   </div>
 </div>
@@ -383,11 +387,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 <div id="reset-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:none;align-items:center;justify-content:center">
   <div style="width:100%;max-width:400px;padding:2rem;background:var(--surface-1);border-radius:16px;border:0.5px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.12)">
     <div style="text-align:center;margin-bottom:2rem">
-      <svg width="140" height="30" viewBox="0 0 140 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <text x="0" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#0B1F3A">LYV</text>
-        <circle cx="44" cy="19" r="2.8" fill="#C5A84B" opacity="0.8"/>
-        <text x="48" y="24" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-0.5" fill="#C5A84B">CMI</text>
-      </svg>
+      <div class="lyv-brand login" style="justify-content:center"><span class="lyv-brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lyv-brand-word">LYV<b>.</b>CMI</span></div>
       <div style="font-size:13px;color:var(--text-secondary);margin-top:6px">Definir nova password</div>
     </div>
     <div style="margin-bottom:1.2rem">
@@ -415,16 +415,9 @@ input[disabled]{opacity:.55;cursor:not-allowed}
 <div class="sb" style="display:none">
   <div class="logo">
     <div class="lm">
-      <svg width="130" height="28" viewBox="0 0 130 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- LIV em azul escuro -->
-        <text x="0" y="22" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#0B1F3A">LYV</text>
-        <!-- CMI em dourado -->
-        <text x="42" y="22" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#C5A84B">CMI</text>
-        <!-- ponto separador -->
-        <circle cx="40" cy="18" r="2.5" fill="#C5A84B" opacity="0.6"/>
-      </svg>
+      <div class="lyv-brand"><span class="lyv-brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lyv-brand-word">LYV<b>.</b>CMI</span></div>
     </div>
-    <div class="lt">Back-office do mediador AMI</div>
+    <div class="lt">Da angariação à escritura.</div>
   </div>
 
   <div class="ng">
