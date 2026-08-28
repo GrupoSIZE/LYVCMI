@@ -470,7 +470,7 @@ input[disabled]{opacity:.55;cursor:not-allowed}
     <div class="card">
       <div class="ch"><div class="cht"><i class="ti ti-chart-bar"></i>Vendas concluídas 2026</div></div>
       <div id="dash-vendas-wrap">
-        <table><thead><tr><th>Imóvel</th><th>Escritura</th><th>Recebido</th></tr></thead>
+        <table><thead><tr><th>Imóvel</th><th>Recebimento</th><th>Valor recebido</th></tr></thead>
         <tbody id="dash-vendas"><tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas</td></tr></tbody>
         </table>
       </div>
@@ -4988,7 +4988,7 @@ async function v29BusinessForProperty(propertyId){
 async function v29SyncPropertyFromBusiness(n,previousCpcv){
   if(!n?.imovel_id)return;const state=v29DerivedPropertyState(n),payload={estado:state,updated_at:new Date().toISOString()};
   if(state==='vendido'){
-    payload.data_venda=new Date().toISOString().slice(0,10);const f=v28PropertyById(n.imovel_id);if(f&&!Number(f.comissaoRecebida))payload.comissao_recebida=v28CommissionForBusiness(n)||v28CommissionForProperty(f,[n]);
+    payload.data_venda=new Date().toISOString().slice(0,10);payload.comissao_recebida=0;
   }else if(previousCpcv==='escritura_realizada'){
     payload.data_venda=null;payload.comissao_recebida=0;
   }
@@ -5270,5 +5270,47 @@ const _v35GoBase=go;go=function(id,t,s){_v35GoBase(id,t,s);if(id==='agenda')setT
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{v35EnsureUI();if(currentAgenciaId)v34LoadAgenda(false).then(v35Render)},450));
 </script>
 
+<style id="v36-finance-css">
+.v36-finance-ok{color:var(--green-dark);font-weight:700}.v36-finance-wait{color:var(--amber);font-weight:650}.v36-receipt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.v36-timing{font-size:10px;color:var(--text-secondary);margin-top:3px}@media(max-width:700px){.v36-receipt-grid{grid-template-columns:1fr}}
+</style>
+<script>
+/* LYV.CMI V3.6 — potencial -> CPCV contratado -> recebido confirmado. */
+function v36DatePT(v){if(!v)return'—';const d=new Date(v+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-PT')}
+function v36Timing(v){if(!v)return'Data de escritura por indicar';const now=new Date(),d=new Date(v+'T23:59:59'),days=Math.ceil((d-now)/86400000);if(days<0)return'Escritura prevista em atraso';if(days<=30)return`Recebimento previsto nos próximos 30 dias`;if(days<=90)return`Recebimento previsto em 31–90 dias`;return`Recebimento previsto após 90 dias`}
+
+v24RenderNegocios=function(){
+  const box=document.getElementById('v24-negocios-lista');if(!box)return;
+  if(!v24Negocios.length){box.innerHTML='<div class="card" style="padding:2rem;text-align:center;color:var(--text-tertiary)"><i class="ti ti-briefcase" style="font-size:28px;display:block;margin-bottom:8px"></i>Ainda não existem negócios.</div>';return}
+  box.innerHTML=`<div class="card"><table style="table-layout:auto"><thead><tr><th>Negócio</th><th>Imóvel</th><th>Origem</th><th>Partilha</th><th>Proposta / Reserva</th><th>CPCV</th><th>Escritura prevista</th><th>Financeiro</th><th></th></tr></thead><tbody>${v24Negocios.map(n=>{
+    const comercial=n.proposta_estado!=='nao_iniciada'?`Proposta: ${v24Lab('proposta',n.proposta_estado)}`:`Reserva: ${v24Lab('reserva',n.reserva_estado)}`;
+    const canCpcv=v24NegocioNext(n)==='Criar CPCV',canEmail=v24NegocioNext(n)==='Enviar pacote',done=n.recebido===true;
+    const financial=done?`<span class="v36-finance-ok">Recebido<br>${fmtEurNumero(Number(n.comissao_recebida)||0)}</span>`:n.cpcv_estado==='escritura_realizada'?'<span class="v36-finance-wait">Pagamento por confirmar</span>':'—';
+    return `<tr><td><strong>${v2Esc(n.referencia||'NEG')}</strong></td><td>${v2Esc(v24NegocioImovel(n))}</td><td><span class="bdg ${n.origem==='externo'?'ba':'bg'}">${n.origem==='externo'?'Externo':'Carteira'}</span></td><td><span class="bdg ${v24Badge(n.partilha_estado)}">${v2Esc(v24Lab('partilha',n.partilha_estado))}</span></td><td>${v2Esc(comercial)}</td><td><span class="bdg ${v24Badge(n.cpcv_estado)}">${v2Esc(v24Lab('cpcv',n.cpcv_estado))}</span></td><td>${v2Esc(v36DatePT(n.data_escritura_prevista))}<div class="v36-timing">${v2Esc(v36Timing(n.data_escritura_prevista))}</div></td><td>${financial}</td><td style="white-space:nowrap"><button class="btn" onclick="v24OpenEstadoNegocio('${n.id}')"><i class="ti ti-adjustments"></i>Estados</button>${canEmail?` <button class="btn p" onclick="v24OpenPackageEmail('${n.id}')"><i class="ti ti-send"></i>Enviar</button>`:''}${canCpcv?` <button class="btn p" onclick="v24OpenCpcvNegocio('${n.id}')"><i class="ti ti-file-certificate"></i>CPCV</button>`:''}${n.cpcv_estado==='escritura_realizada'?` <button class="btn ${done?'':'p'}" onclick="v36OpenReceipt('${n.id}')"><i class="ti ti-cash"></i>${done?'Editar recebimento':'Registar recebido'}</button>`:''}</td></tr>`
+  }).join('')}</tbody></table></div>`;
+};
+
+const _v36OpenStateBase=v24OpenEstadoNegocio;
+v24OpenEstadoNegocio=function(id){_v36OpenStateBase(id);const n=v24Negocios.find(x=>x.id===id),body=document.getElementById('v24-est-body');if(!n||!body)return;const block=document.createElement('div');block.className='form-card';block.style.marginTop='12px';block.innerHTML=`<div class="fc-title"><i class="ti ti-calendar-event"></i>Previsão financeira</div><div class="ff"><label>Data prevista da escritura</label><input id="v36-est-date" type="date" value="${v2Esc(n.data_escritura_prevista||'')}"></div><div class="v36-timing">A comissão permanece em “A receber (CPCV)” até à escritura e só passa para “Recebido” quando o pagamento for confirmado.</div>`;body.insertBefore(block,body.lastElementChild)};
+const _v36SaveStateBase=v24SaveEstadoNegocio;
+v24SaveEstadoNegocio=async function(id){const date=document.getElementById('v36-est-date')?.value||null;if(document.getElementById('v36-est-date')){const q=await supa.from('negocios').update({data_escritura_prevista:date}).eq('id',id);if(q.error){mostrarToast('Falta executar o SQL financeiro V3.6: '+q.error.message,'err');return}}await _v36SaveStateBase(id)};
+
+function v36EnsureReceiptModal(){if(document.getElementById('v36-receipt-modal'))return;const m=document.createElement('div');m.id='v36-receipt-modal';m.className='modal';m.style.display='none';m.innerHTML=`<div class="modal-box" style="max-width:560px"><div class="modal-head"><div><div class="modal-title">Confirmar recebimento</div><div class="modal-sub" id="v36-receipt-ref"></div></div><button class="modal-close" onclick="document.getElementById('v36-receipt-modal').style.display='none'">×</button></div><div class="modal-body"><input type="hidden" id="v36-receipt-id"><div class="nota inf"><i class="ti ti-info-circle"></i>Regista apenas quando a comissão tiver efetivamente entrado. A escritura concluída não confirma, por si só, o pagamento.</div><div class="v36-receipt-grid"><div class="ff"><label>Valor recebido (€)</label><input id="v36-receipt-value" type="number" min="0" step="0.01"></div><div class="ff"><label>Data do recebimento</label><input id="v36-receipt-date" type="date"></div></div><div class="btn-row"><button class="btn" onclick="document.getElementById('v36-receipt-modal').style.display='none'">Cancelar</button><button class="btn p" onclick="v36SaveReceipt()"><i class="ti ti-check"></i>Confirmar recebido</button></div></div></div>`;document.body.appendChild(m)}
+function v36OpenReceipt(id){v36EnsureReceiptModal();const n=v24Negocios.find(x=>x.id===id);if(!n)return;document.getElementById('v36-receipt-id').value=id;document.getElementById('v36-receipt-ref').textContent=`${n.referencia||''} · ${v24NegocioImovel(n)}`;document.getElementById('v36-receipt-value').value=Number(n.comissao_recebida)||v28CommissionForBusiness(n)||'';document.getElementById('v36-receipt-date').value=n.data_recebimento||new Date().toISOString().slice(0,10);document.getElementById('v36-receipt-modal').style.display='flex'}
+async function v36SaveReceipt(){const id=document.getElementById('v36-receipt-id').value,n=v24Negocios.find(x=>x.id===id),value=Number(document.getElementById('v36-receipt-value').value),date=document.getElementById('v36-receipt-date').value;if(!n||!value||!date){mostrarToast('Indica o valor e a data do recebimento.','err');return}const q=await supa.from('negocios').update({recebido:true,comissao_recebida:value,data_recebimento:date}).eq('id',id).select('*').single();if(q.error){mostrarToast('Falta executar o SQL financeiro V3.6: '+q.error.message,'err');return}if(n.imovel_id)await supa.from('imoveis').update({comissao_recebida:value}).eq('id',n.imovel_id);document.getElementById('v36-receipt-modal').style.display='none';await Promise.all([v24LoadNegocios(),v2LoadImoveis()]);renderDash();mostrarToast('Recebimento confirmado.','ok')}
+
+v30DashboardModel=function(businesses=[]){
+  const properties=Object.values(fichas||{}),year=new Date().getFullYear(),portfolio=properties.filter(f=>!['vendido','antigo'].includes(f.estado));
+  const signed=businesses.filter(n=>n.estado!=='perdido'&&n.cpcv_estado==='assinado'),signedIds=new Set(signed.map(n=>n.imovel_id).filter(Boolean));
+  const ownForecast=portfolio.filter(f=>f.estado!=='cpcv'&&!signedIds.has(f.db_id)).map(f=>{const n=businesses.filter(x=>x.imovel_id===f.db_id&&x.estado!=='perdido').sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0],base=Math.round((Number(f.preco)||0)*(Number(f.comissao_pct)||Number(agencia.comissao)||0)/100*100)/100,share=n?.tem_partilha&&n.partilha_estado==='aceite'?Math.max(0,Math.min(100,Number(n.partilha_pct_nossa)||0))/100:1;return{f,n:n||null,value:Math.round(base*share*100)/100,source:'carteira'}});
+  const externalForecast=businesses.filter(n=>n.origem==='externo'&&n.estado!=='perdido'&&!['assinado','escritura_realizada'].includes(n.cpcv_estado)&&(n.proposta_estado==='aceite'||n.reserva_estado==='aceite'||n.partilha_estado==='aceite')).map(n=>({n,value:v28CommissionForBusiness(n),source:'externo'}));
+  const cpcv=signed.map(n=>({n,value:v28CommissionForBusiness(n),source:'negocio'}));
+  const confirmed=businesses.filter(n=>n.recebido===true&&n.data_recebimento&&Number(String(n.data_recebimento).slice(0,4))===year).map(n=>{const real=v28PropertyById(n.imovel_id),f=real?{...real,dataVenda:v36DatePT(n.data_recebimento)}:{ref:n.referencia||'Negócio',morada:v24NegocioImovel(n),dataVenda:v36DatePT(n.data_recebimento)};return{f,n,value:Number(n.comissao_recebida)||v28CommissionForBusiness(n)}});
+  const confirmedIds=new Set(confirmed.map(x=>x.n?.imovel_id).filter(Boolean));const legacy=properties.filter(f=>f.estado==='vendido'&&Number(f.comissaoRecebida)>0&&!confirmedIds.has(f.db_id)&&(!f.dataVendaDb||Number(String(f.dataVendaDb).slice(0,4))===year)).map(f=>({f,value:Number(f.comissaoRecebida),legacy:true}));
+  return{properties,portfolio,sold:properties.filter(f=>f.estado==='vendido'),pipeline:[...ownForecast,...externalForecast],cpcv,received:[...confirmed,...legacy],businesses,year};
+};
+const _v36PaintBase=v30PaintDashboard;
+v30PaintDashboard=function(m){_v36PaintBase(m);const forecast=document.getElementById('dash-comissoes')?.closest('.mc')?.querySelector('.mcs2');if(forecast)forecast.textContent='Potencial fora de CPCV';const cpcv=document.getElementById('dash-cpcv')?.closest('.mc')?.querySelector('.mcs2');if(cpcv)cpcv.textContent='Por data prevista de escritura';const rec=document.getElementById('dash-recebido-sub');if(rec)rec.textContent=`${m.received.length} recebimento${m.received.length===1?'':'s'} confirmado${m.received.length===1?'':'s'} em ${m.year}`;v28DashboardData.cpcv=m.cpcv.map(x=>({title:x.n?.referencia||'Negócio',subtitle:`${v24NegocioImovel(x.n)} · ${v36DatePT(x.n?.data_escritura_prevista)} · ${v36Timing(x.n?.data_escritura_prevista)}`,value:x.value}))};
+document.addEventListener('DOMContentLoaded',v36EnsureReceiptModal);
+</script>
 </body>
 </html>
