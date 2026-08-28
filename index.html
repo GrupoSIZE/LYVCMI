@@ -4584,5 +4584,291 @@ go=function(id,t,s){_v24GoBase(id,t,s);if(['proposta','reserva','partilha'].incl
 document.addEventListener('DOMContentLoaded',v24EnsureNegociosUI);if(document.readyState!=='loading')v24EnsureNegociosUI();
 </script>
 
+
+<style id="v25-polish-css">
+/* LYVCMI V2.5 — polish / clearer selected states */
+.tog.on,.sub-tog.on{
+  background:var(--green-light)!important;
+  color:var(--green-dark)!important;
+  border-color:var(--green)!important;
+  box-shadow:inset 0 0 0 1px var(--green);
+  font-weight:600;
+}
+.tog,.sub-tog{outline:none!important}
+#v25-bib-filters{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:0 0 1rem}
+#v25-bib-filters .ff{min-width:190px}
+#v25-bib-search{min-width:260px}
+@media(max-width:900px){#v25-bib-filters .ff,#v25-bib-search{min-width:100%;width:100%}}
+</style>
+<script>
+/* ============================================================
+   LYVCMI V2.5 — document polish / Word / PDF / library filters
+   ============================================================ */
+
+/* ---------- Monetary formatting ---------- */
+function fmtEurNumero(v){
+  const n=Number(v);
+  if(!Number.isFinite(n))return '_________';
+  return '€ '+new Intl.NumberFormat('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+}
+function v25Ate999(n){
+  n=Math.trunc(n);
+  const u=['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','catorze','quinze','dezasseis','dezassete','dezoito','dezanove'];
+  const d=['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const c=['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+  if(n<20)return u[n];
+  if(n<100){const r=n%10;return d[Math.floor(n/10)]+(r?' e '+u[r]:'')}
+  if(n===100)return 'cem';
+  const r=n%100;return c[Math.floor(n/100)]+(r?' e '+v25Ate999(r):'');
+}
+function v25InteiroExtenso(n){
+  n=Math.trunc(Math.abs(Number(n)||0));
+  if(n===0)return 'zero';
+  const partes=[];
+  const milhoes=Math.floor(n/1000000);n%=1000000;
+  const milhares=Math.floor(n/1000);const resto=n%1000;
+  if(milhoes){partes.push(milhoes===1?'um milhão':v25Ate999(milhoes)+' milhões')}
+  if(milhares){partes.push(milhares===1?'mil':v25Ate999(milhares)+' mil')}
+  if(resto){
+    let txt=v25Ate999(resto);
+    if(partes.length && (resto<100 || resto%100===0)) txt='e '+txt;
+    partes.push(txt);
+  }
+  return partes.join(' ');
+}
+function eurosPorExtenso(n){
+  const valor=Math.round((Math.abs(Number(n)||0)+Number.EPSILON)*100)/100;
+  const euros=Math.floor(valor);const cents=Math.round((valor-euros)*100);
+  let txt='';
+  if(euros){const inteiro=v25InteiroExtenso(euros);const deMilhao=(euros%1000000===0 && euros>=1000000);txt=inteiro+(deMilhao?' de':'')+' '+(euros===1?'euro':'euros');}
+  if(cents)txt+=(txt?' e ':'')+v25InteiroExtenso(cents)+' '+(cents===1?'cêntimo':'cêntimos');
+  return txt||'zero euros';
+}
+/* Legal documents: numeric amount + a genuinely written-out amount. */
+fmtEur=function(v){
+  const n=Number(v);
+  if(!Number.isFinite(n)||n===0)return '_________';
+  return fmtEurNumero(n)+' ('+eurosPorExtenso(n)+')';
+};
+/* The commission-sharing document is a commercial calculation: numeric only. */
+const _v25TemplatePartilhaBase=templatePartilha;
+templatePartilha=function(d){
+  const legalFmt=fmtEur;
+  try{fmtEur=fmtEurNumero;return _v25TemplatePartilhaBase(d)}
+  finally{fmtEur=legalFmt}
+};
+
+/* ---------- Word export: browser-independent editable Word (.doc) ---------- */
+function v25SafeFileName(s){return String(s||'Documento').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9_-]+/gi,'_').replace(/^_+|_+$/g,'').slice(0,120)||'Documento'}
+function v25WordHtml(htmlBody,title){
+  return `<!doctype html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${v2Esc(title||'LYVCMI')}</title><style>
+  @page{size:A4;margin:18mm 17mm 18mm 17mm} body{font-family:Georgia,'Times New Roman',serif;font-size:11pt;line-height:1.55;color:#111} .doc-page{max-width:none!important}.doc-header{display:flex;justify-content:space-between;border-bottom:2px solid #C5A84B;padding-bottom:12px;margin-bottom:18px}.doc-logo-wrap img{max-height:52px}.doc-agencia-info{text-align:right;font-family:Arial,sans-serif;font-size:9pt}.doc-titulo-wrap{text-align:center;margin:18px 0}.doc-titulo-wrap h1{font-size:14pt}.doc-tipo-badge{font-family:Arial,sans-serif;font-size:8.5pt}.doc-page h2{font-size:9.5pt;color:#1D9E75;text-transform:uppercase;margin-top:18px}.doc-separator{border:0;border-top:1px solid #ccc}.doc-highlight{border-left:3px solid #1D9E75;padding:8px 12px;background:#f6fbf8}.doc-assinaturas{display:table;width:100%;margin-top:35px}.doc-ass-box{display:table-cell;width:48%;padding-right:20px;border-top:1px solid #333;padding-top:6px}.doc-footer-line{margin-top:28px;border-top:1px solid #ddd;padding-top:8px;text-align:center;color:#777;font-family:Arial,sans-serif;font-size:8pt} p{text-align:justify} table{border-collapse:collapse;width:100%} td,th{border:1px solid #ddd;padding:6px}
+  </style></head><body>${htmlBody}</body></html>`;
+}
+function v25DownloadWordHtml(htmlBody,title){
+  const blob=new Blob(['\ufeff',v25WordHtml(htmlBody,title)],{type:'application/msword;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=v25SafeFileName(title)+'.doc';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2500);
+}
+gerarWord=function(id){
+  try{const html=gerarHtml(id);const title=document.getElementById('modal-title')?.textContent||tipoLabels?.[id]||id;v25DownloadWordHtml(html,title)}catch(e){mostrarToast('Erro ao gerar Word: '+(e.message||e),'err')}
+};
+gerarWordBib=function(cid){
+  const c=v2FindContract(cid);if(!c)return;try{v25DownloadWordHtml(v2HtmlFromData(c.tipo,c.dados),c.document_ref||c.titulo||c.tipoLabel||'Documento')}catch(e){mostrarToast('Erro ao gerar Word: '+(e.message||e),'err')}
+};
+gerarWordAtual=function(){
+  try{const body=document.getElementById('modal-body')?.innerHTML;if(!body)throw new Error('Não existe documento em pré-visualização.');v25DownloadWordHtml(body,document.getElementById('modal-title')?.textContent||'Documento_LYVCMI')}catch(e){mostrarToast('Erro ao gerar Word: '+(e.message||e),'err')}
+};
+
+/* ---------- PDF: open inline in a new tab; browser/OS decides the PDF viewer ---------- */
+gerarPdfAtual=async function(){
+  if(v2ContratoPreviewId)return v2DownloadPdf(v2ContratoPreviewId);
+  if(!contratoAtual)return;
+  let popup=null;
+  try{
+    popup=window.open('about:blank','_blank');
+    const html=gerarHtml(contratoAtual),blob=await v2PdfBlob(html,'PRÉ-VISUALIZAÇÃO'),url=URL.createObjectURL(blob);
+    if(popup)popup.location.href=url;else window.open(url,'_blank','noopener');
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){if(popup)popup.close();mostrarToast('Erro no PDF: '+(e.message||e),'err')}
+};
+v2DownloadPdf=async function(cid){
+  const c=v2FindContract(cid);if(!c)return;const popup=window.open('about:blank','_blank');
+  try{
+    if(!c.pdf_path){const db=(await supa.from('contratos').select('*').eq('id',c.db_id).single()).data;c.pdf_path=await v2UploadPdf(db,c.dados);await v2LoadContratos()}
+    const url=await v2SignedUrl('lyvcmi-docs',c.pdf_path,600);if(!url)throw new Error('PDF indisponível.');
+    if(popup)popup.location.href=url;else window.open(url,'_blank','noopener');
+  }catch(e){if(popup)popup.close();mostrarToast('Erro no PDF: '+(e.message||e),'err')}
+};
+
+/* ---------- Library filters: type + free text ---------- */
+function v25EnsureBibFilters(){
+  const pg=document.getElementById('pg-biblioteca'),list=document.getElementById('bib-lista');if(!pg||!list||document.getElementById('v25-bib-filters'))return;
+  const bar=document.createElement('div');bar.id='v25-bib-filters';bar.innerHTML=`<div class="ff"><label>Tipo de documento</label><select id="v25-bib-type" onchange="renderBibLista()"><option value="">Todos os tipos</option><option value="cm-excl">CMI exclusivo</option><option value="cm-abrt">CMI não exclusivo</option><option value="reserva">Reserva</option><option value="proposta">Proposta</option><option value="cpcv">CPCV</option><option value="partilha">Partilha de comissão</option></select></div><div class="ff" id="v25-bib-search"><label>Pesquisar</label><input id="v25-bib-query" placeholder="Referência, imóvel, interveniente..." oninput="renderBibLista()"></div>`;
+  list.parentNode.insertBefore(bar,list);
+}
+renderBibLista=function(){
+  v25EnsureBibFilters();
+  const lista=document.getElementById('bib-lista'),estado=bibTabAtual==='rascunhos'?'rascunho':'finalizado';if(!lista)return;
+  const tipo=document.getElementById('v25-bib-type')?.value||'',q=(document.getElementById('v25-bib-query')?.value||'').trim().toLowerCase();
+  const items=bibDB.filter(c=>c.estado===estado).filter(c=>!tipo||c.tipo===tipo).filter(c=>!q||[c.document_ref,c.tipoLabel,c.morada,c.titulo,c.partes].some(v=>String(v||'').toLowerCase().includes(q)));
+  if(!items.length){lista.innerHTML=`<div class="bib-empty"><i class="ti ti-files" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>Nenhum documento corresponde aos filtros.</div>`;return}
+  lista.innerHTML=items.map(c=>`<div class="bib-card"><div class="bib-card-top"><div><div class="bib-tipo">${v2Esc(c.tipoLabel)} · V${c.versao}</div><div class="bib-titulo">${v2Esc(c.morada||c.titulo)}</div></div><span class="bdg ${c.estado==='rascunho'?'ba':'bg'}">${c.estado==='rascunho'?'Rascunho':'Finalizado'}</span></div><div class="bib-meta"><span><i class="ti ti-users"></i> ${v2Esc(c.partes)}</span><span><i class="ti ti-calendar"></i> ${v2Esc(c.data)} · ${v2Esc(c.document_ref||c.id)}</span></div><div class="bib-acoes"><button class="btn" onclick="abrirContratoBib('${c.db_id}')"><i class="ti ti-eye"></i>Ver</button>${c.estado==='rascunho'?`<button class="btn" onclick="editarContratoBib('${c.db_id}')"><i class="ti ti-edit"></i>Editar</button><button class="btn" style="color:var(--red)" onclick="apagarContratoBib('${c.db_id}')"><i class="ti ti-trash"></i></button>`:`<button class="btn p" onclick="v2DownloadPdf('${c.db_id}')"><i class="ti ti-file-type-pdf"></i>PDF</button><button class="btn" onclick="v2OpenEmail('${c.db_id}')"><i class="ti ti-send"></i>Email</button><button class="btn" onclick="editarContratoBib('${c.db_id}')"><i class="ti ti-copy"></i>Nova versão</button><button class="btn" onclick="gerarWordBib('${c.db_id}')"><i class="ti ti-file-word"></i>Word</button>`}</div></div>`).join('');
+};
+
+/* ---------- Proposal / reservation: show only fields relevant to the selected origin ---------- */
+function v25OriginVisibility(doc,origem){
+  const ext=document.getElementById(`${doc}-ext-ref`);if(ext?.closest('.ff'))ext.closest('.ff').style.display=origem==='externo'?'flex':'none';
+  const card=ext?.closest('.form-card');if(card){const title=card.querySelector('.fc-title');if(title)title.innerHTML=`<i class="ti ti-home"></i>${origem==='externo'?'Dados do imóvel da agência parceira':'Dados do imóvel selecionado'}`}
+  if(origem==='proprio'&&ext)ext.value='';
+}
+const _v25SetOrigemBase=v24SetOrigem;
+v24SetOrigem=function(doc,origem){_v25SetOrigemBase(doc,origem);v25OriginVisibility(doc,origem)};
+const _v25GoBase=go;
+go=function(id,t,s){_v25GoBase(id,t,s);if(id==='biblioteca')setTimeout(()=>{v25EnsureBibFilters();renderBibLista()},20);if(id==='proposta'||id==='reserva')setTimeout(()=>v25OriginVisibility(id,document.getElementById(`${id}-origem`)?.value||'proprio'),80)};
+
+v25EnsureBibFilters();
+</script>
+
+
+<style id="v26-fixes-css">
+/* LYVCMI V2.6 — operational polish */
+#f-estado-sel{background:#fff!important;opacity:1!important;cursor:pointer!important}
+.v26-state-note{font-size:10px;color:var(--text-tertiary);white-space:nowrap}
+.v26-saving{opacity:.65;pointer-events:none}
+#v25-bib-filters{background:var(--bg-primary);border:.5px solid var(--border-tertiary);border-radius:var(--radius-lg);padding:.85rem 1rem}
+</style>
+<script>
+/* ============================================================
+   LYVCMI V2.6 — status persistence / dashboard / logout / UX
+   ============================================================ */
+
+/* ---------- Property status: always editable and saved immediately ---------- */
+function v26EnsureEstadoHint(){
+  const sel=document.getElementById('f-estado-sel');
+  if(!sel||document.getElementById('v26-state-note'))return;
+  const note=document.createElement('span');note.id='v26-state-note';note.className='v26-state-note';note.textContent='Guarda automaticamente';
+  sel.insertAdjacentElement('afterend',note);
+}
+const _v26SetFichaEditingBase=v22SetFichaEditing;
+v22SetFichaEditing=function(editing){
+  _v26SetFichaEditingBase(editing);
+  const sel=document.getElementById('f-estado-sel');
+  if(sel){sel.disabled=false;sel.removeAttribute('disabled');sel.style.pointerEvents='';sel.style.opacity='1'}
+  v26EnsureEstadoHint();
+};
+
+mudarEstadoImovel=async function(){
+  if(!fichaAberta||!currentAgenciaId)return;
+  const f=fichas[fichaAberta],sel=document.getElementById('f-estado-sel');
+  if(!f||!sel)return;
+  const novo=sel.value,anterior=f.estado;
+  if(novo===anterior)return;
+  const note=document.getElementById('v26-state-note');
+  sel.classList.add('v26-saving');if(note)note.textContent='A guardar…';
+  const dataVenda=novo==='vendido'?(f.dataVendaDb||new Date().toISOString().slice(0,10)):null;
+  try{
+    if(!f.db_id)throw new Error('Guarda primeiro a ficha do imóvel.');
+    const {data,error}=await supa.from('imoveis').update({estado:novo,data_venda:dataVenda,updated_at:new Date().toISOString()}).eq('id',f.db_id).select('*').single();
+    if(error)throw error;
+    f.estado=data.estado||novo;f.dataVendaDb=data.data_venda||null;f.dataVenda=data.data_venda?v2DatePT(data.data_venda):'';
+    await v2LoadImoveis();
+    renderCarteira();renderDash();
+    if(fichaAberta&&fichas[fichaAberta]){selIm(fichaAberta);v22SetFichaEditing(v22FichaEditing)}
+    if(note)note.textContent='Estado guardado';mostrarToast('Estado do imóvel atualizado.','ok');
+  }catch(e){
+    console.error(e);sel.value=anterior;if(note)note.textContent='Não guardado';mostrarToast('Erro ao guardar estado: '+(e.message||e),'err');
+  }finally{sel.classList.remove('v26-saving');setTimeout(()=>{if(note)note.textContent='Guarda automaticamente'},1800)}
+};
+
+/* Preserve raw sale date when loading properties. */
+const _v26LoadImoveisBase=v2LoadImoveis;
+v2LoadImoveis=async function(){
+  await _v26LoadImoveisBase();
+  if(!currentAgenciaId)return;
+  try{
+    const {data}=await supa.from('imoveis').select('id,data_venda').eq('agencia_id',currentAgenciaId);
+    (data||[]).forEach(r=>{const f=Object.values(fichas).find(x=>x.db_id===r.id);if(f)f.dataVendaDb=r.data_venda||null});
+  }catch(e){console.warn('sale dates',e)}
+};
+
+/* ---------- Business state -> sold property when deed is completed ---------- */
+const _v26SaveEstadoNegocioBase=v24SaveEstadoNegocio;
+v24SaveEstadoNegocio=async function(id){
+  const n=v24Negocios.find(x=>x.id===id);
+  const cpcv=document.getElementById('v24-est-cpcv')?.value;
+  await _v26SaveEstadoNegocioBase(id);
+  if(n?.imovel_id&&cpcv==='escritura_realizada'){
+    try{
+      await supa.from('imoveis').update({estado:'vendido',data_venda:new Date().toISOString().slice(0,10),updated_at:new Date().toISOString()}).eq('id',n.imovel_id);
+      await v2LoadImoveis();renderCarteira();renderDash();
+    }catch(e){console.error(e);mostrarToast('Negócio guardado, mas não foi possível atualizar o estado do imóvel.','err')}
+  }
+};
+
+/* ---------- Dashboard: sales are read from persisted property status ---------- */
+function v26RenderSalesDashboard(){
+  const vendidos=Object.values(fichas).filter(f=>f.estado==='vendido').sort((a,b)=>String(b.dataVendaDb||'').localeCompare(String(a.dataVendaDb||'')));
+  const year=new Date().getFullYear();
+  const vendidosAno=vendidos.filter(f=>!f.dataVendaDb||Number(String(f.dataVendaDb).slice(0,4))===year);
+  const vendasEl=document.getElementById('dash-vendas');
+  if(vendasEl){
+    vendasEl.innerHTML=vendidosAno.length?vendidosAno.map(f=>`<tr><td>${v2Esc(f.morada||f.ref)}</td><td>${v2Esc(f.dataVenda||'—')}</td><td style="color:var(--green-dark);font-weight:600">${fmtEurNumero(f.comissaoRecebida||0)}</td></tr>`).join(''):`<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);font-size:13px;padding:1rem">Sem vendas registadas em ${year}</td></tr>`;
+  }
+  const sub=document.getElementById('dash-recebido-sub');if(sub)sub.textContent=`${vendidosAno.length} venda${vendidosAno.length===1?'':'s'} concluída${vendidosAno.length===1?'':'s'} em ${year}`;
+}
+const _v26RenderDashBase=renderDash;
+renderDash=function(){_v26RenderDashBase();v26RenderSalesDashboard()};
+
+/* ---------- Proposal / reservation contextual cleanup ---------- */
+function v26RefreshContextUX(doc){
+  const origem=document.getElementById(`${doc}-origem`)?.value||'proprio';
+  const choice=document.getElementById(`${doc}-parceria-choice`);
+  const ext=document.getElementById(`${doc}-ext-ref`);
+  if(ext?.closest('.ff'))ext.closest('.ff').style.display=origem==='externo'?'flex':'none';
+  if(choice)choice.style.display=origem==='proprio'?'block':'none';
+  const note=document.getElementById(`${doc}-externo-note`);if(note)note.style.display=origem==='externo'?'flex':'none';
+  const parceiro=document.getElementById(`${doc}-parceiro-wrap`);
+  if(origem==='externo'&&parceiro)parceiro.style.display='block';
+  const card=ext?.closest('.form-card');if(card){const title=card.querySelector('.fc-title');if(title)title.innerHTML=`<i class="ti ti-home"></i>${origem==='externo'?'Dados do imóvel da outra agência':'Dados do nosso imóvel'}`}
+}
+const _v26SetOrigemBase=v24SetOrigem;
+v24SetOrigem=function(doc,origem){_v26SetOrigemBase(doc,origem);v26RefreshContextUX(doc)};
+const _v26SetTemParceiroBase=v24SetTemParceiro;
+v24SetTemParceiro=function(doc,yes){_v26SetTemParceiroBase(doc,yes);v26RefreshContextUX(doc)};
+
+/* ---------- Logout: clear overlays/session and return reliably to login ---------- */
+authLogout=async function(){
+  try{
+    ['onboarding-screen','reset-screen','modal-preview','v2-email-modal','v24-package-modal','v24-estado-modal','v22-owner-modal'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none'});
+    currentAgenciaId=null;agenteAtual={id:null,user_id:null,nome:'',nif:'',email:'',telefone:'',cargo:'',role:'admin'};
+    Object.keys(fichas||{}).forEach(k=>delete fichas[k]);
+    if(typeof bibDB!=='undefined')bibDB=[];if(typeof v24Negocios!=='undefined')v24Negocios=[];if(typeof v24Parceiros!=='undefined')v24Parceiros=[];
+    localStorage.removeItem('lyvcmi_agencia');
+    const {error}=await supa.auth.signOut();if(error)throw error;
+  }catch(e){console.error('logout',e)}
+  finally{
+    const auth=document.getElementById('auth-screen');if(auth)auth.style.display='flex';
+    const sb=document.querySelector('.sb'),main=document.querySelector('.main');if(sb)sb.style.display='none';if(main)main.style.display='none';
+    const pw=document.getElementById('auth-password');if(pw)pw.value='';
+    try{authShowLogin()}catch(e){}
+    setTimeout(()=>window.location.reload(),100);
+  }
+};
+
+/* ---------- Final-document toolbar labels ---------- */
+function v26RelabelDocumentButtons(){
+  const w=document.getElementById('modal-word-btn');if(w){w.innerHTML='<i class="ti ti-file-word"></i>Word editável';w.title='Descarrega uma cópia editável compatível com Microsoft Word (.doc)'}
+}
+const _v26FecharModalBase=fecharModal;
+fecharModal=function(){_v26FecharModalBase()};
+const _v26PreVisualizarBase=preVisualizar;
+preVisualizar=function(id){const r=_v26PreVisualizarBase(id);setTimeout(v26RelabelDocumentButtons,0);return r};
+const _v26AbrirContratoBibBase=abrirContratoBib;
+abrirContratoBib=async function(id){const r=await _v26AbrirContratoBibBase(id);setTimeout(v26RelabelDocumentButtons,0);return r};
+
+/* Initial pass */
+document.addEventListener('DOMContentLoaded',()=>{v26EnsureEstadoHint();v26RelabelDocumentButtons()});
+</script>
+
 </body>
 </html>
