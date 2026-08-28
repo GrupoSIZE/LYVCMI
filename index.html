@@ -5125,5 +5125,50 @@ v23LoadDocumentosImovel=async function(ref){await _v30LoadDocsBase(ref);if(ref==
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{renderDash();if(fichaAberta){v30LockPropertyState();v23RenderChecklist(fichaAberta)}},100));
 </script>
 
+<style id="v32-mixed-payments-css">
+.v32-mix{display:none;margin-top:12px;padding:14px;border:1px solid var(--border-tertiary);border-radius:10px;background:var(--bg-secondary)}.v32-mix.on{display:block}.v32-mix-title{font-size:12px;font-weight:700;margin-bottom:10px}.v32-mix-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v32-mix-total{display:flex;justify-content:space-between;gap:12px;margin-top:11px;padding-top:10px;border-top:1px solid var(--border-tertiary);font-size:12px}.v32-mix-alert{display:none;margin-top:10px;padding:9px 11px;border-radius:8px;background:#fff0f0;color:#9b2424;font-size:11.5px;line-height:1.4}.v32-mix-alert.on{display:block}.v32-mix-ok{color:var(--green-dark)}@media(max-width:700px){.v32-mix-grid{grid-template-columns:1fr}}
+</style>
+<script>
+/* LYVCMI V3.2 — detailed mixed payments + cash-limit guard. */
+const V32_MIX={
+  reserva:{select:'reserva-pagamento',price:'reserva-im-valor',signal:'reserva-sinal',label:'remanescente da reserva'},
+  proposta:{select:'proposta-pagamento',price:'proposta-preco',signal:'proposta-sinal',label:'remanescente da proposta'},
+  cpcv:{select:'cpcv-remanescente',price:'cpcv-im-valor',signal:'cpcv-sinal',label:'remanescente do CPCV'}
+};
+function v32Number(id){return Number(document.getElementById(id)?.value)||0}
+function v32CashLimit(doc){const profile=document.getElementById(`${doc}-mix-perfil`)?.value||'residente';return profile==='contabilidade'?1000:profile==='nao_residente'?10000:3000}
+function v32Target(doc){const c=V32_MIX[doc];return Math.max(0,v32Number(c.price)-v32Number(c.signal))}
+function v32MixSum(doc){return ['capitais','transferencia','credito','numerario','outro'].reduce((s,k)=>s+v32Number(`${doc}-mix-${k}`),0)}
+function v32IsMixed(doc){const c=V32_MIX[doc],value=document.getElementById(c.select)?.value||'';return value.toLowerCase().includes('misto')}
+function v32ValidateMix(doc,showToast=false){
+  const box=document.getElementById(`${doc}-mix-box`),alert=document.getElementById(`${doc}-mix-alert`);if(!box||!alert||!v32IsMixed(doc))return{ok:true};
+  const cash=v32Number(`${doc}-mix-numerario`),limit=v32CashLimit(doc),sum=v32MixSum(doc),target=v32Target(doc),diff=Math.abs(sum-target);let errors=[];
+  if(cash>=limit)errors.push(`Numerário de ${fmtEurNumero(cash)} não permitido para este perfil: o limite legal é inferior a ${fmtEurNumero(limit)}.`);
+  if(target>0&&diff>.01)errors.push(`As parcelas somam ${fmtEurNumero(sum)}, mas o remanescente é ${fmtEurNumero(target)}. Diferença: ${fmtEurNumero(diff)}.`);
+  if(target<=0&&sum<=0)errors.push('Indica pelo menos uma parcela da composição do pagamento.');
+  alert.innerHTML=errors.length?`<strong>Atenção:</strong> ${errors.join('<br>')}`:'<span class="v32-mix-ok"><strong>Composição válida.</strong> As parcelas coincidem com o remanescente.</span>';alert.classList.add('on');
+  document.getElementById(`${doc}-mix-soma`).textContent=fmtEurNumero(sum);document.getElementById(`${doc}-mix-alvo`).textContent=fmtEurNumero(target);
+  if(showToast&&errors.length)mostrarToast(errors[0],'err');return{ok:!errors.length,errors};
+}
+function v32ToggleMix(doc){const box=document.getElementById(`${doc}-mix-box`);if(!box)return;box.classList.toggle('on',v32IsMixed(doc));if(v32IsMixed(doc))v32ValidateMix(doc)}
+function v32EnhanceMixedPayment(doc){
+  const c=V32_MIX[doc],select=document.getElementById(c.select);if(!select||document.getElementById(`${doc}-mix-box`))return;
+  const box=document.createElement('div');box.id=`${doc}-mix-box`;box.className='v32-mix';box.innerHTML=`<div class="v32-mix-title">Composição do pagamento misto</div><div class="v32-mix-grid"><div class="ff"><label>Capitais próprios (€)</label><input id="${doc}-mix-capitais" type="number" min="0" step="0.01"></div><div class="ff"><label>Transferência bancária (€)</label><input id="${doc}-mix-transferencia" type="number" min="0" step="0.01"></div><div class="ff"><label>Crédito bancário (€)</label><input id="${doc}-mix-credito" type="number" min="0" step="0.01"></div><div class="ff"><label>Numerário (€)</label><input id="${doc}-mix-numerario" type="number" min="0" step="0.01"></div><div class="ff"><label>Outro meio rastreável (€)</label><input id="${doc}-mix-outro" type="number" min="0" step="0.01"></div><div class="ff"><label>Perfil do pagador</label><select id="${doc}-mix-perfil"><option value="residente">Particular residente</option><option value="contabilidade">Empresa / contabilidade organizada</option><option value="nao_residente">Particular não residente, não comerciante</option></select></div></div><div style="font-size:10.5px;color:var(--text-secondary);margin-top:9px">Regista cada parcela apenas uma vez. Os pagamentos associados à mesma operação são considerados de forma agregada.</div><div class="v32-mix-total"><span>Remanescente: <strong id="${doc}-mix-alvo">€ 0,00</strong></span><span>Soma das parcelas: <strong id="${doc}-mix-soma">€ 0,00</strong></span></div><div class="v32-mix-alert" id="${doc}-mix-alert"></div>`;
+  select.closest('.form-card')?.appendChild(box);select.addEventListener('change',()=>v32ToggleMix(doc));box.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>v32ValidateMix(doc)));document.getElementById(c.price)?.addEventListener('input',()=>v32ValidateMix(doc));document.getElementById(c.signal)?.addEventListener('input',()=>v32ValidateMix(doc));v32ToggleMix(doc);
+}
+const _v32GoBase=go;
+go=function(id,t,s){_v32GoBase(id,t,s);if(V32_MIX[id])setTimeout(()=>v32EnhanceMixedPayment(id),100)};
+const _v32SaveBase=v2SaveContract;
+v2SaveContract=async function(id,estado){if(V32_MIX[id]&&estado==='finalizado'&&!v32ValidateMix(id,true).ok)return;return _v32SaveBase(id,estado)};
+guardarRascunho=async id=>v2SaveContract(id,'rascunho');finalizarContrato=async id=>v2SaveContract(id,'finalizado');
+const _v32PreviewBase=preVisualizar;
+preVisualizar=function(id){if(V32_MIX[id]&&!v32ValidateMix(id,true).ok)return;return _v32PreviewBase(id)};
+function v32PaymentBreakdown(d,doc){
+  if(!String(d[V32_MIX[doc].select]||'').toLowerCase().includes('misto'))return'';const items=[['Capitais próprios',d[`${doc}-mix-capitais`]],['Transferência bancária',d[`${doc}-mix-transferencia`]],['Crédito bancário',d[`${doc}-mix-credito`]],['Numerário',d[`${doc}-mix-numerario`]],['Outro meio rastreável',d[`${doc}-mix-outro`]]].filter(x=>Number(x[1])>0);return items.length?`<div class="doc-highlight"><strong>Composição do pagamento misto</strong><br>${items.map(x=>`${x[0]}: <strong>${fmtEurNumero(x[1])}</strong>`).join('<br>')}</div>`:'';
+}
+function v32WrapPaymentTemplate(base,doc){return function(d){let html=base(d),detail=v32PaymentBreakdown(d,doc);return detail?html.replace('<div class="doc-footer-line">',detail+'<div class="doc-footer-line">'):html}}
+templateReserva=v32WrapPaymentTemplate(templateReserva,'reserva');templateProposta=v32WrapPaymentTemplate(templateProposta,'proposta');templateCpcv=v32WrapPaymentTemplate(templateCpcv,'cpcv');
+</script>
+
 </body>
 </html>
