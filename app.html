@@ -5476,5 +5476,38 @@ async function v40ApplyOwner(rows){const f=fichas[fichaAberta],m=v40Map(rows),co
 const _v40ChecklistBase=v23RenderChecklist;v23RenderChecklist=function(ref=fichaAberta){_v40ChecklistBase(ref);const box=document.getElementById('f-docs'),summary=box?.querySelector('.v29-check-summary');if(summary&&!summary.querySelector('.v40-ocr-open'))summary.insertAdjacentHTML('beforeend','<button class="btn p v40-ocr-open" onclick="v40Open(\'imovel\')"><i class="ti ti-scan"></i>Ler documento</button><button class="btn v40-ocr-open" onclick="v40Open(\'proprietario\')"><i class="ti ti-id"></i>Ler identificação</button>')};
 document.addEventListener('DOMContentLoaded',v40EnsureModal);
 </script>
+<style id="v41-cmi-ocr-css">
+.v41-cmi-ocr{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px 16px;margin:12px 0;border:1px solid #b8d9ed;background:#f2f8fc;border-radius:10px}.v41-cmi-ocr strong{display:block;color:#123d5a;margin-bottom:3px}.v41-cmi-ocr small{color:var(--text-secondary)}.v41-cmi-ocr-actions{display:flex;gap:7px;flex-wrap:wrap}@media(max-width:720px){.v41-cmi-ocr{align-items:flex-start;flex-direction:column}}
+</style>
+<script>
+/* LYV.CMI V4.1 — o CMI também pode começar diretamente pelos documentos. */
+let v41CmiOcr=null;
+function v41OpenCmiOcr(prefix,purpose){v40EnsureModal();v40Reset();v41CmiOcr={prefix,purpose};document.getElementById('v40-purpose').value=purpose;document.getElementById('v40-purpose').disabled=true;document.getElementById('v40-type').value=purpose==='proprietario'?'cartao_cidadao':'auto';document.getElementById('v40-ocr-modal').style.display='flex'}
+const _v41CloseBase=v40Close;v40Close=function(){v41CmiOcr=null;const p=document.getElementById('v40-purpose');if(p)p.disabled=false;_v41CloseBase()};
+const _v41ResetBase=v40Reset;v40Reset=function(){_v41ResetBase();const p=document.getElementById('v40-purpose');if(p)p.disabled=!!v41CmiOcr};
+
+const _v41ReadPortfolio=v40Read;
+v40Read=async function(){
+  if(!v41CmiOcr)return _v41ReadPortfolio();
+  const file=document.getElementById('v40-file').files[0],purpose=v41CmiOcr.purpose,type=document.getElementById('v40-type').value,err=document.getElementById('v40-error'),btn=document.getElementById('v40-read');err.style.display='none';
+  if(!file){err.textContent='Escolhe uma fotografia ou PDF.';err.style.display='block';return}if(file.size>20*1024*1024){err.textContent='O ficheiro não pode exceder 20 MB.';err.style.display='block';return}
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i>A ler…';
+  try{const {data:{user}}=await supa.auth.getUser(),ext=(file.name.split('.').pop()||'bin').toLowerCase(),path=`${currentAgenciaId}/ocr/cmi/${user?.id||'utilizador'}/${crypto.randomUUID()}.${ext}`,up=await supa.storage.from('lyvcmi-docs').upload(path,file,{contentType:file.type,upsert:false});if(up.error)throw up.error;const ins=await supa.from('ocr_documentos').insert({agencia_id:currentAgenciaId,imovel_id:null,finalidade:purpose,tipo_documento:type,storage_path:path,nome_original:file.name,mime_type:file.type,created_by:user?.id||null}).select('*').single();if(ins.error)throw ins.error;v40OcrRow=ins.data;const call=await supa.functions.invoke('ocr-documento',{body:{documento_id:ins.data.id}});if(call.error)throw call.error;if(call.data?.error)throw new Error(call.data.error);v40OcrResult=call.data.resultado;v40RenderReview(file)}catch(e){console.error(e);err.textContent='Não foi possível ler: '+(e.message||e)+'. Confirma a função, os Secrets e o saldo da API.';err.style.display='block'}finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-scan"></i>Ler documento'}
+};
+
+const _v41ConfirmPortfolio=v40Confirm;
+v40Confirm=async function(){
+  if(!v41CmiOcr)return _v41ConfirmPortfolio();
+  const selected=v40Selected();if(!selected.length){mostrarToast('Seleciona pelo menos um campo.','err');return}
+  try{if(v41CmiOcr.purpose==='proprietario')v41ApplyCmiOwner(v41CmiOcr.prefix,selected);else v41ApplyCmiProperty(v41CmiOcr.prefix,selected);const {data:{user}}=await supa.auth.getUser();await supa.from('ocr_documentos').update({estado:'confirmado',confirmacao_json:{campos:selected,destino:'cmi'},reviewed_by:user?.id||null,reviewed_at:new Date().toISOString()}).eq('id',v40OcrRow.id);v40Close();mostrarToast('Dados confirmados e preenchidos no CMI. Revê antes de finalizar.','ok')}catch(e){console.error(e);mostrarToast('Erro ao preencher o CMI: '+(e.message||e),'err')}
+};
+function v41Set(id,value){const e=document.getElementById(id);if(e&&value!==undefined&&value!==null&&value!==''){e.value=value;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}}
+function v41ApplyCmiProperty(p,rows){const m=v40Map(rows),map={morada_imovel:'-im-morada',artigo_matricial:'-im-artigo',descricao_predial:'-im-descpred',freguesia:'-of-freguesia',concelho:'-of-concelho',conservatoria:'-of-conservatoria',natureza:'-of-natureza',destino:'-of-destino',area_total:'-of-area',licenca_numero:'-of-licenca',licenca_data:'-of-licenca-data',camara:'-of-camara'};Object.entries(map).forEach(([k,s])=>v41Set(p+s,m[k]));if(m.area_bruta_privativa&&!m.area_total)v41Set(p+'-of-area',m.area_bruta_privativa);if(m.tipologia){v41Set(p+'-im-tipologia',m.tipologia);v41Set(p+'-of-divisoes',String(m.tipologia).replace(/[^0-9]/g,''))}}
+function v41ApplyCmiOwner(p,rows){const m=v40Map(rows),prefix=p+'-cli';if(m.denominacao_empresa){const snap={tipo:'coletiva',empresa:{denominacao:m.denominacao_empresa,nif:m.nipc||m.nif||'',registo:m.registo_comercial||'',morada:m.morada_proprietario||''},reps:m.representante_legal?[{nome:m.representante_legal,nif:'',doc:'',cargo:''}]:[{}],outorgantes:[]};ogRestoreSnapshot(prefix,snap);return}const current=ogSnapshot(prefix),owner={nome:m.nome||'',nif:m.nif||'',doc:[m.documento,m.validade_documento&&'válido até '+m.validade_documento].filter(Boolean).join(' · '),morada:m.morada_proprietario||''},outs=current?.tipo==='singular'?(current.outorgantes||[{}]):[{}];outs[0]={...outs[0],...Object.fromEntries(Object.entries(owner).filter(([,v])=>v))};ogRestoreSnapshot(prefix,{tipo:'singular',estadoCivil:current?.estadoCivil||'solteiro',casadoModo:current?.casadoModo||'',outorgantes:outs,reps:[]})}
+
+const _v41EnhanceCmiBase=v39EnhanceOfficialCmi;
+v39EnhanceOfficialCmi=function(id){_v41EnhanceCmiBase(id);if(!['cm-excl','cm-abrt'].includes(id))return;const p=id==='cm-excl'?'cmexcl':'cmabrt',form=document.getElementById('form-'+id);if(!form||form.querySelector('.v41-cmi-ocr'))return;const note=form.querySelector('.v39-official-note'),bar=document.createElement('div');bar.className='v41-cmi-ocr';bar.innerHTML=`<div><strong><i class="ti ti-scan"></i> Começar pelos documentos</strong><small>Lê os documentos, confirma os campos e o CMI fica pré-preenchido.</small></div><div class="v41-cmi-ocr-actions"><button type="button" class="btn p" onclick="v41OpenCmiOcr('${p}','proprietario')"><i class="ti ti-id"></i>Identificação do proprietário</button><button type="button" class="btn" onclick="v41OpenCmiOcr('${p}','imovel')"><i class="ti ti-file-description"></i>Documentos do imóvel</button></div>`;(note||form.firstChild).insertAdjacentElement('afterend',bar)};
+setTimeout(()=>{if(document.getElementById('form-cm-excl')?.offsetParent)v39EnhanceOfficialCmi('cm-excl');if(document.getElementById('form-cm-abrt')?.offsetParent)v39EnhanceOfficialCmi('cm-abrt')},300);
+</script>
 </body>
 </html>
