@@ -5504,7 +5504,21 @@ async function v41ProcessCmiFile(){
   const file=v41CmiOcr?.files?.[v41CmiOcr.index],purpose=v41CmiOcr?.purpose,type=document.getElementById('v40-type').value,err=document.getElementById('v40-error'),btn=document.getElementById('v40-read');err.style.display='none';
   if(!file){err.textContent='Escolhe uma fotografia ou PDF.';err.style.display='block';return}if(file.size>20*1024*1024){err.textContent='O ficheiro não pode exceder 20 MB.';err.style.display='block';return}
   btn.disabled=true;btn.innerHTML=`<i class="ti ti-loader"></i>A ler ${v41CmiOcr.index+1}/${v41CmiOcr.files.length}…`;
-  try{const {data:{user}}=await supa.auth.getUser(),ext=(file.name.split('.').pop()||'bin').toLowerCase(),path=`${currentAgenciaId}/ocr/cmi/${user?.id||'utilizador'}/${crypto.randomUUID()}.${ext}`,up=await supa.storage.from('lyvcmi-docs').upload(path,file,{contentType:file.type,upsert:false});if(up.error)throw up.error;const ins=await supa.from('ocr_documentos').insert({agencia_id:currentAgenciaId,finalidade:purpose,tipo_documento:type,storage_path:path,nome_original:file.name,mime_type:file.type,created_by:user?.id||null}).select('*').single();if(ins.error)throw ins.error;v40OcrRow=ins.data;const call=await supa.functions.invoke('ocr-documento',{body:{documento_id:ins.data.id}});if(call.error)throw call.error;if(call.data?.error)throw new Error(call.data.error);v40OcrResult=call.data.resultado;v40RenderReview(file)}catch(e){console.error(e);const msg=String(e.message||e);err.textContent=msg.includes('mime type')?'O Storage lyvcmi-docs ainda não aceita fotografias. Adiciona image/jpeg, image/png e image/webp aos MIME types do bucket.':'Não foi possível ler: '+msg+'. Confirma a função, os Secrets e o saldo da API.';err.style.display='block'}finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-scan"></i>Ler documento'}
+  try{
+    const {data:{user}}=await supa.auth.getUser();if(!user)throw new Error('Sessão expirada. Entra novamente.');
+    const uuidOk=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||''));
+    let agencyId=uuidOk(currentAgenciaId)?currentAgenciaId:null;
+    if(!agencyId){const m=await supa.from('agencia_users').select('agencia_id').eq('user_id',user.id).eq('ativo',true).limit(1).maybeSingle();if(m.error)throw m.error;agencyId=m.data?.agencia_id||null;}
+    if(!uuidOk(agencyId)){const a=await supa.from('agencias').select('id').or(`owner_user_id.eq.${user.id},user_id.eq.${user.id}`).limit(1).maybeSingle();if(a.error)throw a.error;agencyId=a.data?.id||null;}
+    if(!uuidOk(agencyId))throw new Error('Não foi possível identificar a agência desta sessão. Termina a sessão e entra novamente.');
+    currentAgenciaId=agencyId;
+    const ext=(file.name.split('.').pop()||'bin').toLowerCase(),path=`${agencyId}/ocr/cmi/${user.id}/${crypto.randomUUID()}.${ext}`,up=await supa.storage.from('lyvcmi-docs').upload(path,file,{contentType:file.type,upsert:false});
+    if(up.error)throw up.error;
+    const ins=await supa.from('ocr_documentos').insert({agencia_id:agencyId,finalidade:purpose,tipo_documento:type,storage_path:path,nome_original:file.name,mime_type:file.type,created_by:user.id}).select('*').single();
+    if(ins.error)throw ins.error;v40OcrRow=ins.data;
+    const call=await supa.functions.invoke('ocr-documento',{body:{documento_id:ins.data.id}});if(call.error)throw call.error;if(call.data?.error)throw new Error(call.data.error);
+    v40OcrResult=call.data.resultado;v40RenderReview(file);
+  }catch(e){console.error(e);const msg=String(e.message||e);err.textContent=msg.includes('mime type')?'O Storage lyvcmi-docs ainda não aceita fotografias. Adiciona image/jpeg, image/png e image/webp aos MIME types do bucket.':'Não foi possível ler: '+msg+'. Confirma a função, os Secrets e o saldo da API.';err.style.display='block'}finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-scan"></i>Ler documento'}
 }
 
 const _v41ConfirmPortfolio=v40Confirm;
