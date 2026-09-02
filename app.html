@@ -727,7 +727,7 @@ function go(id,t,s){
   document.getElementById('tbt').textContent=t||id;
   document.getElementById('tbs').textContent=s||'';
   const nis=document.querySelectorAll('.ni');
-  const map={dash:0,carteira:1,agenda:2,biblioteca:3,'cm-excl':4,'cm-abrt':5,reserva:6,proposta:7,cpcv:8,partilha:9,config:99};
+  const map={dash:0,carteira:1,negocios:2,agenda:3,biblioteca:4,'cm-excl':5,'cm-abrt':6,reserva:7,proposta:8,cpcv:9,partilha:10,config:99};
   if(map[id]!==undefined&&map[id]<99)nis[map[id]].classList.add('on');
   if(id==='config')cfgLoad();
   if(['cm-excl','cm-abrt','reserva','proposta','cpcv','partilha'].includes(id)){
@@ -745,6 +745,13 @@ function go(id,t,s){
   if(id==='carteira')renderCarteira();
   if(id==='dash')renderDash();
   if(id==='biblioteca')renderBiblioteca();
+}
+function v44NewContract(id,t,s){
+  if(!['cm-excl','cm-abrt'].includes(id))return go(id,t,s);
+  if(typeof v2ContractSourceImovelId!=='undefined')v2ContractSourceImovelId=null;
+  const form=document.getElementById('form-'+id);
+  if(form){form.innerHTML='';[...form.attributes].filter(a=>a.name.startsWith('data-')).forEach(a=>form.removeAttribute(a.name));}
+  go(id,t,s);
 }
 
 /* ====================== FICHAS DE IMÓVEL (dados de exemplo) ====================== */
