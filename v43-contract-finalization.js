@@ -8,6 +8,7 @@
   const commission=document.getElementById(p+'-cond-comissao')?.closest('.ff');if(!commission)return;
   commission.insertAdjacentHTML('beforebegin','<div class="ff"><label>Tipo de remuneração</label><select id="'+p+'-cond-comissao-tipo" onchange="v43ToggleCommission(\''+p+'\')"><option value="percentagem">Percentagem</option><option value="fixa">Valor fixo</option></select></div>');
   commission.insertAdjacentHTML('afterend','<div class="ff v43-fixed-'+p+'" style="display:none"><label>Comissão fixa (€)</label><input id="'+p+'-cond-comissao-fixa" type="number" min="0" step="0.01" oninput="v43SuggestWords(\''+p+'\')"></div><div class="ff v43-fixed-'+p+'" style="display:none"><label>Comissão fixa por extenso</label><input id="'+p+'-cond-comissao-fixa-extenso" placeholder="Ex.: cinco mil euros"></div>');
+  v43ToggleCommission(p);
  };
  window.v43ToggleCommission=function(p){
   const fixed=document.getElementById(p+'-cond-comissao-tipo')?.value==='fixa';
@@ -28,7 +29,7 @@
   html=html.replace(/<p>2\. O Segundo Contratante obriga-se a pagar à Mediadora, a título de remuneração,[\s\S]*?<\/p>/,'<p>2. O Segundo Contratante obriga-se a pagar à Mediadora, a título de remuneração:<br>'+percentLine+'<br><strong>OU</strong><br>'+fixedLine+'</p>');
   html=html.replace(/(\([^()<>]+\))(?: \1)+/g,'$1');
   const raw=d[p+'-cond-datainicio'],dt=raw?new Date(raw+'T12:00:00'):new Date(),longDate=dt.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
-  html=html.replace('<div class="doc-data-local">____________________, _____ de ________________ de _____.</div>','<div class="doc-data-local">____________________, '+v2Esc(longDate)+'.</div>');
+  html=html.replace(/<div class="doc-data-local">\s*____________________,\s*_____\s+de\s+________________\s+de\s+_____\.\s*<\/div>/,'<div class="doc-data-local">____________________, '+v2Esc(longDate)+'.</div>');
   return html;
  };
  const baseFinalize=finalizarContrato;
@@ -39,4 +40,18 @@
   }
   return baseFinalize(id);
  };
+ window.v44NewContract=function(id,title,subtitle){
+  if(!['cm-excl','cm-abrt'].includes(id))return go(id,title,subtitle);
+  v2ContractSourceImovelId=null;
+  const form=document.getElementById('form-'+id);
+  if(form){form.innerHTML='';[...form.attributes].filter(a=>a.name.startsWith('data-')).forEach(a=>form.removeAttribute(a.name));}
+  go(id,title,subtitle);
+ };
+ function v43EnhanceVisibleForms(){
+  ['cm-excl','cm-abrt'].forEach(id=>{if(document.getElementById('form-'+id))v39EnhanceOfficialCmi(id)});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v43EnhanceVisibleForms);
+ else v43EnhanceVisibleForms();
+ setTimeout(v43EnhanceVisibleForms,300);
+ setTimeout(v43EnhanceVisibleForms,1200);
 })();
