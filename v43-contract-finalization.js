@@ -3,12 +3,12 @@
  const baseEnhance=v39EnhanceOfficialCmi;
  v39EnhanceOfficialCmi=function(id){
   baseEnhance(id);if(!['cm-excl','cm-abrt'].includes(id))return;
-  const p=id==='cm-excl'?'cmexcl':'cmabrt',form=document.getElementById('form-'+id);
-  if(!form||document.getElementById(p+'-cond-comissao-tipo'))return;
-  const commission=document.getElementById(p+'-cond-comissao')?.closest('.ff');if(!commission)return;
-  commission.insertAdjacentHTML('beforebegin','<div class="ff"><label>Tipo de remuneração</label><select id="'+p+'-cond-comissao-tipo" onchange="v43ToggleCommission(\''+p+'\')"><option value="percentagem">Percentagem</option><option value="fixa">Valor fixo</option></select></div>');
-  commission.insertAdjacentHTML('afterend','<div class="ff v43-fixed-'+p+'" style="display:none"><label>Comissão fixa (€)</label><input id="'+p+'-cond-comissao-fixa" type="number" min="0" step="0.01" oninput="v43SuggestWords(\''+p+'\')"></div><div class="ff v43-fixed-'+p+'" style="display:none"><label>Comissão fixa por extenso</label><input id="'+p+'-cond-comissao-fixa-extenso" placeholder="Ex.: cinco mil euros"></div>');
-  v43ToggleCommission(p);
+  const p=id==='cm-excl'?'cmexcl':'cmabrt',form=document.getElementById('form-'+id);if(!form)return;
+  if(!document.getElementById(p+'-cond-comissao-tipo')){
+   const commission=document.getElementById(p+'-cond-comissao')?.closest('.ff');
+   if(commission){commission.insertAdjacentHTML('beforebegin','<div class="ff"><label>Tipo de remuneração</label><select id="'+p+'-cond-comissao-tipo" onchange="v43ToggleCommission(\''+p+'\')"><option value="percentagem">Percentagem</option><option value="fixa">Valor fixo</option></select></div>');commission.insertAdjacentHTML('afterend','<div class="ff v43-fixed-'+p+'" style="display:none"><label>Comissão fixa (€)</label><input id="'+p+'-cond-comissao-fixa" type="number" min="0" step="0.01" oninput="v43SuggestWords(\''+p+'\')"></div><div class="ff v43-fixed-'+p+'" style="display:none"><label>Comissão fixa por extenso</label><input id="'+p+'-cond-comissao-fixa-extenso" placeholder="Ex.: cinco mil euros"></div>');v43ToggleCommission(p);}
+  }
+  if(!document.getElementById(p+'-ce-numero')){const official=document.getElementById(p+'-of-area')?.closest('.form-card');if(official)official.insertAdjacentHTML('beforeend','<div class="fg" style="margin-top:10px"><div class="ff"><label>Fração autónoma</label><input id="'+p+'-im-fracao" placeholder="Ex.: FD"></div><div class="ff"><label>Andar / divisão</label><input id="'+p+'-im-andar"></div><div class="ff"><label>N.º do certificado energético</label><input id="'+p+'-ce-numero"></div><div class="ff"><label>Validade do certificado energético</label><input id="'+p+'-ce-validade" type="date"></div><div class="ff"><label>Classe energética</label><input id="'+p+'-ce-classe" placeholder="Ex.: B-"></div></div>');}
  };
  window.v43ToggleCommission=function(p){
   const fixed=document.getElementById(p+'-cond-comissao-tipo')?.value==='fixa';
@@ -24,6 +24,7 @@
   let html=baseOfficial(d,tipo);if(d._v39Deposit===true)return html;
   const p=tipo==='excl'?'cmexcl':'cmabrt',mode=d[p+'-cond-comissao-tipo']||'percentagem',pct=v39Get(d,p+'-cond-comissao','___'),iva=(v39Get(d,p+'-cond-ivacond','23%').match(/[\d,.]+/)||['___'])[0];
   const fixed=Number(d[p+'-cond-comissao-fixa'])||0,fixedWords=v39Get(d,p+'-cond-comissao-fixa-extenso',fixed?v39EuroWords(fixed)+' euros':'________________________________');
+  const fraction=v39Get(d,p+'-im-fracao','');if(fraction)html=html.replace(', e inscrito na matriz predial urbana/rústica',', correspondente à fração autónoma <strong>'+v2Esc(fraction)+'</strong>, e inscrito na matriz predial urbana/rústica');
   const percentLine=(mode==='percentagem'?'☒':'☐')+' A quantia de <strong>'+v2Esc(pct)+'% ('+percentagemPorExtenso(pct)+' por cento)</strong>, calculada sobre o preço pelo qual o negócio é efetivamente concretizado, acrescida de IVA à taxa legal de <strong>'+v2Esc(iva)+'%</strong>.';
   const fixedLine=(mode==='fixa'?'☒':'☐')+' A quantia de <strong>'+(fixed?fmtEurNumero(fixed):'_________________ Euros')+' ('+v2Esc(fixedWords)+')</strong>, acrescida de IVA à taxa legal de <strong>'+v2Esc(iva)+'%</strong>.';
   html=html.replace(/<p>2\. O Segundo Contratante obriga-se a pagar à Mediadora, a título de remuneração,[\s\S]*?<\/p>/,'<p>2. O Segundo Contratante obriga-se a pagar à Mediadora, a título de remuneração:<br>'+percentLine+'<br><strong>OU</strong><br>'+fixedLine+'</p>');
@@ -47,6 +48,8 @@
   if(form){form.innerHTML='';[...form.attributes].filter(a=>a.name.startsWith('data-')).forEach(a=>form.removeAttribute(a.name));}
   go(id,title,subtitle);
  };
+ if(typeof v41Set==='function')v41Set=function(id,value){const e=document.getElementById(id);if(!e||value===undefined||value===null||value===''||String(e.value||'').trim())return;let v=String(value).trim();if(e.type==='number'){const n=v.replace(/\s/g,'').replace(',','.').match(/-?\d+(?:\.\d+)?/);v=n?n[0]:'';}if(e.tagName==='SELECT'&&id.endsWith('-im-tipologia')){const t=v.toUpperCase().match(/T\d\+?/);if(t)v=t[0];}if(!v)return;e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));};
+ if(typeof v41ApplyCmiProperty==='function')v41ApplyCmiProperty=function(p,rows){const m=v40Map(rows),map={morada_imovel:'-im-morada',artigo_matricial:'-im-artigo',descricao_predial:'-im-descpred',fracao_autonoma:'-im-fracao',andar_divisao:'-im-andar',freguesia:'-of-freguesia',concelho:'-of-concelho',conservatoria:'-of-conservatoria',natureza:'-of-natureza',destino:'-of-destino',area_total:'-of-area',licenca_numero:'-of-licenca',licenca_data:'-of-licenca-data',camara:'-of-camara',certificado_energetico_numero:'-ce-numero',certificado_energetico_validade:'-ce-validade',classe_energetica:'-ce-classe'};Object.entries(map).forEach(([k,s])=>v41Set(p+s,m[k]));if(m.area_bruta_privativa&&!m.area_total)v41Set(p+'-of-area',m.area_bruta_privativa);if(m.tipologia){v41Set(p+'-im-tipologia',m.tipologia);v41Set(p+'-of-divisoes',String(m.tipologia).replace(/[^0-9]/g,''));}};
  function v43EnhanceVisibleForms(){
   ['cm-excl','cm-abrt'].forEach(id=>{if(document.getElementById('form-'+id))v39EnhanceOfficialCmi(id)});
  }
