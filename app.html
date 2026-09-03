@@ -3581,15 +3581,23 @@ function v2HtmlFromData(id,d){
   if(id==='cm-excl')return templateCmExcl(d,'excl');if(id==='cm-abrt')return templateCmExcl(d,'abrt');if(id==='reserva')return templateReserva(d);if(id==='proposta')return templateProposta(d);if(id==='cpcv')return templateCpcv(d);if(id==='partilha')return templatePartilha(d);return '<div class="doc-page"><p>Documento.</p></div>';
 }
 async function v2PdfBlob(html,docRef=''){
-  if(typeof html2pdf==='undefined')throw new Error('Biblioteca PDF ainda não carregou.');
-  const node=document.createElement('div');node.style.cssText='position:fixed;left:0;top:0;width:794px;min-height:1123px;background:#fff;padding:28px;z-index:2147483000;pointer-events:none;color:#111;overflow:visible';
+  if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF ainda não carregou.');
+  const node=document.createElement('div');node.style.cssText='position:absolute;left:0;top:0;width:794px;min-height:1123px;background:#fff;padding:28px;z-index:2147483000;pointer-events:none;color:#111;overflow:visible;opacity:1;visibility:visible';
   node.innerHTML=html.replace('<div class="doc-page">',`<div class="doc-page"><div style="font-family:Arial,sans-serif;font-size:9px;color:#999;text-align:right;margin-bottom:7px">${v2Esc(docRef)}</div>`);document.body.appendChild(node);
   try{
     if(document.fonts?.ready)await document.fonts.ready;
     await Promise.all([...node.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve})));
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     if(!node.textContent.trim()||node.getBoundingClientRect().height<40)throw new Error('O documento não ficou visível para gerar o PDF.');
-    const blob=await html2pdf().set({margin:[7,7,9,7],image:{type:'jpeg',quality:.98},html2canvas:{scale:1.6,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,windowWidth:900},jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},pagebreak:{mode:['css','legacy']}}).from(node).toPdf().outputPdf('blob');
+    const width=Math.ceil(node.scrollWidth),height=Math.ceil(node.scrollHeight);
+    const canvas=await html2canvas(node,{scale:1.6,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,width,height,windowWidth:Math.max(900,width),windowHeight:Math.max(1200,height)});
+    const probe=document.createElement('canvas'),probeSize=64;probe.width=probeSize;probe.height=probeSize;const probeCtx=probe.getContext('2d');probeCtx.drawImage(canvas,0,0,probeSize,probeSize);const pixels=probeCtx.getImageData(0,0,probeSize,probeSize).data;let ink=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]<245||pixels[i+1]<245||pixels[i+2]<245)ink++;
+    if(ink<8)throw new Error('A captura do documento ficou em branco. O PDF não foi guardado; tenta novamente.');
+    const {jsPDF}=window.jspdf,pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+    const margin=7,pageW=210-margin*2,pageH=297-margin*2,imgW=pageW,imgH=canvas.height*imgW/canvas.width,img=canvas.toDataURL('image/jpeg',.96);let y=margin,remaining=imgH;
+    pdf.addImage(img,'JPEG',margin,y,imgW,imgH,undefined,'FAST');
+    while(remaining>pageH){remaining-=pageH;y=margin-(imgH-remaining);pdf.addPage();pdf.addImage(img,'JPEG',margin,y,imgW,imgH,undefined,'FAST');}
+    const blob=pdf.output('blob');
     if(!blob||blob.size<1500)throw new Error('O PDF foi gerado sem conteúdo. Tenta novamente.');
     return blob;
   }finally{node.remove()}
@@ -5573,6 +5581,6 @@ setTimeout(()=>{if(document.getElementById('form-cm-excl')?.offsetParent)v39Enha
 </script>
 <link rel="stylesheet" href="data:text/css,.v42-id-sides%7Bdisplay:grid;grid-template-columns:1fr%201fr;gap:10px;margin-top:8px%7D.v42-id-side%7Bpadding:12px;border:1px%20solid%20%23b9ddd4;border-radius:8px;background:%23fff%7D.v42-id-side%20label%7Bdisplay:block;font-weight:650;margin-bottom:7px%7D.v42-id-side%20input%7Bwidth:100%25%7D.v40-missing%7Bbackground:%23f5f5f5;color:%23777%7D%40media(max-width:680px)%7B.v42-id-sides%7Bgrid-template-columns:1fr%7D%7D">
 <script src="v42-identity-bundle.js"></script>
-<script src="v43-contract-finalization.js?v=48"></script>
+<script src="v43-contract-finalization.js?v=49"></script>
 </body>
 </html>
