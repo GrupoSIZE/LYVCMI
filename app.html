@@ -1373,7 +1373,7 @@ function imovelCamposHtml(prefix){
 function condicoesCamposHtml(prefix){
   return `
 <div class="fg">
-  <div class="ff"><label>Tipo de remuneração</label><select id="${prefix}-comissao-tipo" onchange="toggleComissaoTipo('${prefix}')"><option value="percentagem">Percentagem</option><option value="fixa">Valor fixo</option></select></div>
+  <div class="ff"><label>Tipo de remuneração</label><select id="${prefix}-comissao-tipo" onchange="v72CommissionChanged('${prefix}')"><option value="percentagem">Percentagem</option><option value="fixa">Valor fixo</option></select></div>
   <div class="ff" id="${prefix}-comissao-pct-wrap"><label>Comissão (%)</label><input id="${prefix}-comissao" type="number" value="3" placeholder="3"></div>
   <div class="ff" id="${prefix}-comissao-fixa-wrap" style="display:none"><label>Comissão fixa (€)</label><input id="${prefix}-comissao-fixa" type="number" min="0" step="0.01" placeholder="Ex.: 5000" oninput="sugerirComissaoExtenso('${prefix}')"></div>
   <div class="ff" id="${prefix}-comissao-extenso-wrap" style="display:none"><label>Valor por extenso</label><input id="${prefix}-comissao-fixa-extenso" placeholder="Ex.: cinco mil euros"></div>
@@ -5636,7 +5636,7 @@ const v70EditBase=editarContratoBib;
 editarContratoBib=function(cid){
   const c=v2FindContract(cid);v70EditingCmiId=c&&['cm-excl','cm-abrt'].includes(c.tipo)?c.db_id:null;
   const result=v70EditBase(cid);
-  if(v70EditingCmiId)[80,300,700].forEach(ms=>setTimeout(()=>{const form=document.getElementById('form-'+c.tipo),save=form?.querySelector('button[onclick*="finalizarContrato"]'),draft=form?.querySelector('button[onclick*="guardarRascunho"]');if(save)save.innerHTML='<i class="ti ti-device-floppy"></i>Guardar alterações';if(draft)draft.style.display='none';const sub=document.getElementById('tbs');if(sub)sub.textContent='A editar '+(c.document_ref||'CMI')+' — será atualizado sem criar uma nova versão'},ms));
+  if(v70EditingCmiId)[80,300,700].forEach(ms=>setTimeout(()=>{const form=document.getElementById('form-'+c.tipo),save=form?.querySelector('button[onclick*="finalizarContrato"]'),draft=form?.querySelector('button[onclick*="guardarRascunho"]'),p=(c.tipo==='cm-excl'?'cmexcl':'cmabrt')+'-cond';if(typeof toggleComissaoTipo==='function')toggleComissaoTipo(p);if(save)save.innerHTML='<i class="ti ti-device-floppy"></i>Guardar alterações';if(draft)draft.style.display='none';const sub=document.getElementById('tbs');if(sub)sub.textContent='A editar '+(c.document_ref||'CMI')+' — será atualizado sem criar uma nova versão'},ms));
   return result;
 };
 const v70SaveBase=v2SaveContract;
@@ -5652,7 +5652,25 @@ window.v67DeleteFinalContract=async function(cid){
 };
 const v70RenderBase=renderBibLista;
 renderBibLista=function(){v70RenderBase();document.querySelectorAll('#bib-lista .bib-card').forEach(card=>{const edit=[...card.querySelectorAll('button')].find(b=>/Nova versão|Editar \/ nova versão/.test(b.textContent));if(edit)edit.innerHTML='<i class="ti ti-edit"></i>Editar'})};
+const v71OfficialBase=v39OfficialCmi;
+v39OfficialCmi=function(d,tipo){return v71OfficialBase(d,tipo).replace(/(<strong>€[^<]*\(([^()<>]+)\)<\/strong>) \(\2\)/g,'$1')};
+window.v72CommissionChanged=function(prefix){
+  const fixed=document.getElementById(prefix+'-comissao-tipo')?.value==='fixa',pct=document.getElementById(prefix+'-comissao'),amount=document.getElementById(prefix+'-comissao-fixa'),words=document.getElementById(prefix+'-comissao-fixa-extenso');
+  if(fixed){if(pct)pct.value=''}else{if(amount)amount.value='';if(words)words.value=''}toggleComissaoTipo(prefix);
+};
+const v72CollectBase=recolherDados;
+recolherDados=function(id){const d=v72CollectBase(id);if(['cm-excl','cm-abrt'].includes(id)){const p=(id==='cm-excl'?'cmexcl':'cmabrt')+'-cond',fixed=d[p+'-comissao-tipo']==='fixa';if(fixed)d[p+'-comissao']='';else{d[p+'-comissao-fixa']='';d[p+'-comissao-fixa-extenso']=''}}return d};
+window.v72OpenBuyerOcr=function(prefix){v41OpenCmiOcr(prefix,'proprietario');if(v41CmiOcr){v41CmiOcr.buyer=true;v41CmiOcr.buyerPrefix=prefix}const title=document.querySelector('#v40-ocr-modal h2,#v40-ocr-modal .modal-title');if(title)title.textContent='Ler identificação do comprador'};
+const v72ApplyOwnerBase=v41ApplyCmiOwner;
+v41ApplyCmiOwner=function(p,rows){
+  if(!['proposta-comp','reserva-res'].includes(p))return v72ApplyOwnerBase(p,rows);const m=v40Map(rows),current=ogSnapshot(p),owner={nome:m.nome||'',nif:m.nif||'',doc:[m.documento,m.validade_documento&&'válido até '+m.validade_documento].filter(Boolean).join(' · '),morada:m.morada_proprietario||'',nacionalidade:m.nacionalidade||'',nascimento:m.data_nascimento||'',validade:m.validade_documento||''};if(!owner.nome)return;const outs=current?.tipo==='singular'?[...(current.outorgantes||[{}])]:[{}];let idx=outs.findIndex(x=>(owner.nif&&x.nif===owner.nif)||(m.documento&&String(x.doc||'').includes(m.documento)));if(idx<0)idx=outs.findIndex(x=>!x.nome&&!x.nif&&!x.doc);if(idx<0){outs.push({});idx=outs.length-1}outs[idx]={...outs[idx],...Object.fromEntries(Object.entries(owner).filter(([,v])=>v))};ogRestoreSnapshot(p,{tipo:'singular',estadoCivil:current?.estadoCivil||'solteiro',casadoModo:current?.casadoModo||'',outorgantes:outs,reps:[]});
+};
+const v72ConfirmBase=v40Confirm;
+v40Confirm=async function(){const ctx=v41CmiOcr?.buyer?{buyer:true,prefix:v41CmiOcr.buyerPrefix,selected:v40Selected()}:null,result=await v72ConfirmBase();if(ctx?.buyer){const m=v40Map(ctx.selected),o={nome:m.nome||'',nif:m.nif||'',doc:m.documento||'',morada:m.morada_proprietario||''};if(o.nome)try{await v2FindOrCreateContact(o)}catch(e){console.error(e);mostrarToast('Comprador preenchido, mas não foi possível atualizar os Contactos: '+(e.message||e),'err')}}return result};
+function v72EnhanceBuyerOcr(id){const prefix=id==='proposta'?'proposta-comp':id==='reserva'?'reserva-res':'';if(!prefix)return;const list=document.getElementById(prefix+'-outorgantes-lista'),card=list?.closest('.form-card');if(!card||card.querySelector('.v72-buyer-ocr'))return;const bar=document.createElement('div');bar.className='v41-cmi-ocr v72-buyer-ocr';bar.innerHTML='<div><strong><i class="ti ti-id"></i> Identificação do comprador</strong><small>Lê o Cartão de Cidadão, confirma os dados e cria o comprador sem duplicar o NIF.</small></div><button type="button" class="btn p" onclick="v72OpenBuyerOcr(\''+prefix+'\')"><i class="ti ti-scan"></i>Ler documento do comprador</button>';card.insertBefore(bar,card.children[1]||null)}
+const v72RenderFormBase=renderForm;
+renderForm=function(id){v72RenderFormBase(id);if(id==='proposta'||id==='reserva')setTimeout(()=>v72EnhanceBuyerOcr(id),30)};
 </script>
-<script src="v43-contract-finalization.js?v=70"></script>
+<script src="v43-contract-finalization.js?v=72"></script>
 </body>
 </html>

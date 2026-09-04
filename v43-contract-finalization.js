@@ -44,6 +44,7 @@
   const fixedLine=(mode==='fixa'?'☒':'☐')+' A quantia de <strong>'+(fixed?fmtEurNumero(fixed):'_________________ Euros')+' ('+v2Esc(fixedWords)+')</strong>, acrescida de IVA à taxa legal de <strong>'+v2Esc(iva)+'%</strong>.';
   html=html.replace(/<p>2\. O Segundo Contratante obriga-se a pagar à Mediadora, a título de remuneração,[\s\S]*?<\/p>/,'<p>2. O Segundo Contratante obriga-se a pagar à Mediadora, a título de remuneração:<br>'+percentLine+'<br><strong>OU</strong><br>'+fixedLine+'</p>');
   html=html.replace(/(\([^()<>]+\))(?: \1)+/g,'$1');
+  html=html.replace(/(<strong>€[^<]*\(([^()<>]+)\)<\/strong>) \(\2\)/g,'$1');
   const raw=d[p+'-cond-datainicio'],dt=raw?new Date(raw+'T12:00:00'):new Date(),longDate=dt.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
   html=html.replace(/<div class="doc-data-local">\s*____________________,\s*_____\s+de\s+________________\s+de\s+_____\.\s*<\/div>/,'<div class="doc-data-local">____________________, '+v2Esc(longDate)+'.</div>');
   return html;
