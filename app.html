@@ -3680,7 +3680,7 @@ async function v2LoadContratos(){
 }
 renderBibLista=function(){
   const lista=document.getElementById('bib-lista'),estado=bibTabAtual==='rascunhos'?'rascunho':'finalizado',items=bibDB.filter(c=>c.estado===estado);if(!items.length){lista.innerHTML=`<div class="bib-empty"><i class="ti ti-files" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>${estado==='rascunho'?'Nenhum rascunho guardado.':'Nenhum documento finalizado.'}</div>`;return}
-  lista.innerHTML=items.map(c=>`<div class="bib-card"><div class="bib-card-top"><div><div class="bib-tipo">${v2Esc(c.tipoLabel)} · V${c.versao}</div><div class="bib-titulo">${v2Esc(c.morada||c.titulo)}</div></div><span class="bdg ${c.estado==='rascunho'?'ba':'bg'}">${c.estado==='rascunho'?'Rascunho':'Finalizado'}</span></div><div class="bib-meta"><span><i class="ti ti-users"></i> ${v2Esc(c.partes)}</span><span><i class="ti ti-calendar"></i> ${v2Esc(c.data)} · ${v2Esc(c.document_ref||c.id)}</span></div><div class="bib-acoes"><button class="btn" onclick="abrirContratoBib('${c.db_id}')"><i class="ti ti-eye"></i>Ver</button>${c.estado==='rascunho'?`<button class="btn" onclick="editarContratoBib('${c.db_id}')"><i class="ti ti-edit"></i>Editar</button><button class="btn" style="color:var(--red)" onclick="apagarContratoBib('${c.db_id}')"><i class="ti ti-trash"></i></button>`:`<button class="btn p" title="Recria e substitui o PDF usando o formato atual" onclick="v2DownloadPdf('${c.db_id}')"><i class="ti ti-refresh"></i>Atualizar PDF</button><button class="btn" onclick="v2OpenEmail('${c.db_id}')"><i class="ti ti-send"></i>Email</button><button class="btn" onclick="editarContratoBib('${c.db_id}')"><i class="ti ti-copy"></i>Nova versão</button><button class="btn" onclick="gerarWordBib('${c.db_id}')"><i class="ti ti-file-word"></i>Word</button><button class="btn v67-delete" style="color:var(--red)" onclick="v67DeleteFinalContract('${c.db_id}')"><i class="ti ti-trash"></i>Eliminar</button>`}</div></div>`).join('');
+  lista.innerHTML=items.map(c=>`<div class="bib-card"><div class="bib-card-top"><div><div class="bib-tipo">${v2Esc(c.tipoLabel)} · V${c.versao}</div><div class="bib-titulo">${v2Esc(c.morada||c.titulo)}</div></div><span class="bdg ${c.estado==='rascunho'?'ba':'bg'}">${c.estado==='rascunho'?'Rascunho':'Finalizado'}</span></div><div class="bib-meta"><span><i class="ti ti-users"></i> ${v2Esc(c.partes)}</span><span><i class="ti ti-calendar"></i> ${v2Esc(c.data)} · ${v2Esc(c.document_ref||c.id)}</span></div><div class="bib-acoes"><button class="btn" onclick="abrirContratoBib('${c.db_id}')"><i class="ti ti-eye"></i>Ver</button>${c.estado==='rascunho'?`<button class="btn" onclick="editarContratoBib('${c.db_id}')"><i class="ti ti-edit"></i>Editar</button><button class="btn" style="color:var(--red)" onclick="apagarContratoBib('${c.db_id}')"><i class="ti ti-trash"></i></button>`:`<button class="btn p" title="Recria e substitui o PDF usando o formato atual" onclick="v2DownloadPdf('${c.db_id}')"><i class="ti ti-refresh"></i>Atualizar PDF</button><button class="btn" onclick="v2OpenEmail('${c.db_id}')"><i class="ti ti-send"></i>Email</button><button class="btn" onclick="editarContratoBib('${c.db_id}')"><i class="ti ti-edit"></i>Editar</button><button class="btn" onclick="gerarWordBib('${c.db_id}')"><i class="ti ti-file-word"></i>Word</button><button class="btn v67-delete" style="color:var(--red)" onclick="v67DeleteFinalContract('${c.db_id}')"><i class="ti ti-trash"></i>Eliminar</button>`}</div></div>`).join('');
 };
 function v2FindContract(cid){return bibDB.find(x=>x.db_id===cid||x.id===cid)}
 abrirContratoBib=function(cid){const c=v2FindContract(cid);if(!c)return;contratoAtual=c.tipo;v2ContratoPreviewId=c.db_id;document.getElementById('modal-title').textContent=(c.document_ref?c.document_ref+' · ':'')+c.titulo;document.getElementById('modal-body').innerHTML=v2HtmlFromData(c.tipo,c.dados);document.getElementById('modal-preview').style.display='flex'};
@@ -5627,6 +5627,32 @@ setTimeout(()=>{if(document.getElementById('form-cm-excl')?.offsetParent)v39Enha
 </script>
 <link rel="stylesheet" href="data:text/css,.v42-id-sides%7Bdisplay:grid;grid-template-columns:1fr%201fr;gap:10px;margin-top:8px%7D.v42-id-side%7Bpadding:12px;border:1px%20solid%20%23b9ddd4;border-radius:8px;background:%23fff%7D.v42-id-side%20label%7Bdisplay:block;font-weight:650;margin-bottom:7px%7D.v42-id-side%20input%7Bwidth:100%25%7D.v40-missing%7Bbackground:%23f5f5f5;color:%23777%7D%40media(max-width:680px)%7B.v42-id-sides%7Bgrid-template-columns:1fr%7D%7D">
 <script src="v42-identity-bundle.js"></script>
-<script src="v43-contract-finalization.js?v=69"></script>
+<script>
+/* V70 — ações essenciais da biblioteca integradas no app. */
+let v70EditingCmiId=null;
+const v70NewBase=v44NewContract;
+v44NewContract=function(id,title,subtitle){v70EditingCmiId=null;return v70NewBase(id,title,subtitle)};
+const v70EditBase=editarContratoBib;
+editarContratoBib=function(cid){
+  const c=v2FindContract(cid);v70EditingCmiId=c&&['cm-excl','cm-abrt'].includes(c.tipo)?c.db_id:null;
+  const result=v70EditBase(cid);
+  if(v70EditingCmiId)[80,300,700].forEach(ms=>setTimeout(()=>{const form=document.getElementById('form-'+c.tipo),save=form?.querySelector('button[onclick*="finalizarContrato"]'),draft=form?.querySelector('button[onclick*="guardarRascunho"]');if(save)save.innerHTML='<i class="ti ti-device-floppy"></i>Guardar alterações';if(draft)draft.style.display='none';const sub=document.getElementById('tbs');if(sub)sub.textContent='A editar '+(c.document_ref||'CMI')+' — será atualizado sem criar uma nova versão'},ms));
+  return result;
+};
+const v70SaveBase=v2SaveContract;
+v2SaveContract=async function(id,estado){
+  if(!v70EditingCmiId||!['cm-excl','cm-abrt'].includes(id))return v70SaveBase(id,estado);
+  const c=v2FindContract(v70EditingCmiId);if(!c)return v70SaveBase(id,estado);const d=recolherDados(id),err=typeof v21ValidateCMI==='function'?v21ValidateCMI(id,d):null;if(err){mostrarToast(err,'err');return}
+  try{const old=await supa.from('contratos').select('*').eq('id',c.db_id).single();if(old.error)throw old.error;const summary=extrairResumo(id,d),snapshot={...(old.data.snapshot||{}),partes:{vendedores:d._outorgantes_vend||[],compradores:d._outorgantes_comp||[]},gerado_em:new Date().toISOString()};const up=await supa.from('contratos').update({titulo:`${tipoLabels[id]||id} — ${summary.morada}`,morada:summary.morada,partes:summary.partes,dados:d,snapshot,estado:'finalizado'}).eq('id',c.db_id).select('*').single();if(up.error)throw up.error;mostrarToast('A atualizar o mesmo CMI e o PDF...','info');await v2UploadPdf(up.data,d);v70EditingCmiId=null;v2ContractSourceImovelId=null;await Promise.all([v2LoadContratos(),v2LoadImoveis()]);renderDash();document.getElementById('modal-title').textContent=`${c.document_ref} · ${up.data.titulo}`;document.getElementById('modal-body').innerHTML=v2HtmlFromData(id,d);document.getElementById('modal-preview').style.display='flex';mostrarToast('CMI atualizado sem criar nova versão.','ok');return up.data}catch(e){console.error(e);mostrarToast('Erro ao atualizar o CMI: '+(e.message||e),'err')}
+};
+window.v67DeleteFinalContract=async function(cid){
+  const c=v2FindContract(cid);if(!c)return mostrarToast('Documento não encontrado. Atualize a página e tente novamente.','err');
+  if(!confirm('Eliminar definitivamente '+(c.document_ref||'este CMI')+'? Esta operação não pode ser anulada.'))return;
+  try{const del=await supa.from('contratos').delete().eq('id',c.db_id).select('id');if(del.error)throw del.error;if(!del.data?.length)throw new Error('A base de dados não autorizou a eliminação.');if(c.pdf_path){const storage=await supa.storage.from('lyvcmi-docs').remove([c.pdf_path]);if(storage.error)console.warn(storage.error)}await v2LoadContratos();renderBibLista();renderDash();mostrarToast('CMI eliminado.','ok')}catch(e){console.error(e);mostrarToast('Não foi possível eliminar: '+(e.message||e),'err')}
+};
+const v70RenderBase=renderBibLista;
+renderBibLista=function(){v70RenderBase();document.querySelectorAll('#bib-lista .bib-card').forEach(card=>{const edit=[...card.querySelectorAll('button')].find(b=>/Nova versão|Editar \/ nova versão/.test(b.textContent));if(edit)edit.innerHTML='<i class="ti ti-edit"></i>Editar'})};
+</script>
+<script src="v43-contract-finalization.js?v=70"></script>
 </body>
 </html>

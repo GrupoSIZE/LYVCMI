@@ -58,6 +58,7 @@
  };
  window.v44NewContract=function(id,title,subtitle){
   if(!['cm-excl','cm-abrt'].includes(id))return go(id,title,subtitle);
+  if(typeof v70EditingCmiId!=='undefined')v70EditingCmiId=null;
   v66EditingCmiId=null;
   v2ContractSourceImovelId=null;
   const form=document.getElementById('form-'+id);
