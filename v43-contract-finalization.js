@@ -16,6 +16,8 @@
   if(internal&&burdens){internal.querySelector('.fc-title').innerHTML='<i class="ti ti-building-community"></i>Situação de ocupação e condomínio <span style="font-size:10px;font-weight:500;color:var(--text-secondary)">— informação interna; não integra automaticamente o texto do CMI</span>';internal.style.gridColumn='1 / -1';internal.style.marginTop='8px';burdens.insertAdjacentElement('afterend',internal);}
  };
  window.v43ToggleCommission=function(p){
+  const nativePrefix=p+'-cond';
+  if(document.getElementById(nativePrefix+'-comissao-fixa-wrap')&&typeof toggleComissaoTipo==='function'){toggleComissaoTipo(nativePrefix);return;}
   const fixed=document.getElementById(p+'-cond-comissao-tipo')?.value==='fixa';
   document.querySelectorAll('.v43-fixed-'+p).forEach(e=>e.style.display=fixed?'block':'none');
   const pct=document.getElementById(p+'-cond-comissao')?.closest('.ff');if(pct)pct.style.display=fixed?'none':'block';
