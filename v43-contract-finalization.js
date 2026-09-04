@@ -56,10 +56,17 @@
   if(form){form.innerHTML='';[...form.attributes].filter(a=>a.name.startsWith('data-')).forEach(a=>form.removeAttribute(a.name));}
   go(id,title,subtitle);
  };
+ const v43EditContractBase=editarContratoBib;
+ editarContratoBib=function(cid){
+  const result=v43EditContractBase(cid);
+  setTimeout(()=>{v43ToggleCommission('cmexcl');v43ToggleCommission('cmabrt')},750);
+  return result;
+ };
  if(typeof v41Set==='function')v41Set=function(id,value){const e=document.getElementById(id);if(!e||value===undefined||value===null||value===''||String(e.value||'').trim())return;let v=String(value).trim();if(e.type==='number'){const n=v.replace(/\s/g,'').replace(',','.').match(/-?\d+(?:\.\d+)?/);v=n?n[0]:'';}if(e.tagName==='SELECT'&&id.endsWith('-im-tipologia')){const t=v.toUpperCase().match(/T\d\+?/);if(t)v=t[0];}if(!v)return;e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));};
  if(typeof v41ApplyCmiProperty==='function')v41ApplyCmiProperty=function(p,rows){const m=v40Map(rows),map={morada_imovel:'-im-morada',artigo_matricial:'-im-artigo',descricao_predial:'-im-descpred',fracao_autonoma:'-im-fracao',andar_divisao:'-im-andar',freguesia:'-of-freguesia',concelho:'-of-concelho',conservatoria:'-of-conservatoria',natureza:'-of-natureza',destino:'-of-destino',divisoes:'-of-divisoes',licenca_numero:'-of-licenca',licenca_data:'-of-licenca-data',camara:'-of-camara',certificado_energetico_numero:'-ce-numero',certificado_energetico_validade:'-ce-validade',classe_energetica:'-ce-classe'};if(m.descricao_predial&&(!/^\s*[A-Z0-9./-]{1,40}\s*$/i.test(m.descricao_predial)||m.descricao_predial.split(/\s+/).length>3))delete m.descricao_predial;if(m.conservatoria)m.conservatoria=String(m.conservatoria).replace(/^Conservat[oó]ria do Registo Predial (?:de|da)\s+/i,'').replace(/\s+(?:sob o )?(?:registo|n\.?º).*$/i,'').trim();if(m.fracao_autonoma)m.natureza='Fração autónoma';Object.entries(map).forEach(([k,s])=>v41Set(p+s,m[k]));if(m.area_bruta_privativa){const area=document.getElementById(p+'-of-area'),n=String(m.area_bruta_privativa).replace(/\s/g,'').replace(',','.').match(/\d+(?:\.\d+)?/);if(area&&n){area.value=n[0];area.dispatchEvent(new Event('input',{bubbles:true}));}}else v41Set(p+'-of-area',m.area_total);if(m.tipologia){v41Set(p+'-im-tipologia',m.tipologia);if(!m.divisoes)v41Set(p+'-of-divisoes',String(m.tipologia).replace(/[^0-9]/g,''));}};
  function v43EnhanceVisibleForms(){
   ['cm-excl','cm-abrt'].forEach(id=>{if(document.getElementById('form-'+id))v39EnhanceOfficialCmi(id)});
+  setTimeout(()=>{v43ToggleCommission('cmexcl');v43ToggleCommission('cmabrt')},250);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v43EnhanceVisibleForms);
  else v43EnhanceVisibleForms();
