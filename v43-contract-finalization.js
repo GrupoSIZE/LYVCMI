@@ -21,6 +21,7 @@
   const pct=document.getElementById(p+'-cond-comissao')?.closest('.ff');if(pct)pct.style.display=fixed?'none':'block';
  };
  function v43SyncCommissions(){v43ToggleCommission('cmexcl');v43ToggleCommission('cmabrt')}
+ function v61EnsureRal(){['cmexcl','cmabrt'].forEach(p=>{const name=document.getElementById(p+'-of-ral'),site=document.getElementById(p+'-of-ral-site');if(name&&!name.value)name.value='Centro de Informação, Mediação e Arbitragem de Consumo (CIAB)';if(site&&!site.value)site.value='https://www.ciab.pt'})}
  window.v43SuggestWords=function(p){
   const value=Number(document.getElementById(p+'-cond-comissao-fixa')?.value)||0,out=document.getElementById(p+'-cond-comissao-fixa-extenso');
   if(out&&!out.dataset.edited)out.value=value?(v39EuroWords(value)+' euros'):'';
@@ -62,7 +63,7 @@
  const v43EditContractBase=editarContratoBib;
  editarContratoBib=function(cid){
   const result=v43EditContractBase(cid);
-  [50,250,600,1200].forEach(ms=>setTimeout(v43SyncCommissions,ms));
+  [50,250,600,1200].forEach(ms=>setTimeout(()=>{v43SyncCommissions();v61EnsureRal()},ms));
   return result;
  };
  document.addEventListener('click',()=>setTimeout(v43SyncCommissions,120),true);
@@ -71,6 +72,7 @@
  if(typeof v41ApplyCmiProperty==='function')v41ApplyCmiProperty=function(p,rows){const m=v40Map(rows),map={morada_imovel:'-im-morada',artigo_matricial:'-im-artigo',descricao_predial:'-im-descpred',fracao_autonoma:'-im-fracao',andar_divisao:'-im-andar',freguesia:'-of-freguesia',concelho:'-of-concelho',conservatoria:'-of-conservatoria',natureza:'-of-natureza',destino:'-of-destino',divisoes:'-of-divisoes',licenca_numero:'-of-licenca',licenca_data:'-of-licenca-data',camara:'-of-camara',certificado_energetico_numero:'-ce-numero',certificado_energetico_validade:'-ce-validade',classe_energetica:'-ce-classe'};if(m.descricao_predial&&(!/^\s*[A-Z0-9./-]{1,40}\s*$/i.test(m.descricao_predial)||m.descricao_predial.split(/\s+/).length>3))delete m.descricao_predial;if(m.conservatoria)m.conservatoria=String(m.conservatoria).replace(/^Conservat[oó]ria do Registo Predial (?:de|da)\s+/i,'').replace(/\s+(?:sob o )?(?:registo|n\.?º).*$/i,'').trim();if(m.fracao_autonoma)m.natureza='Fração autónoma';Object.entries(map).forEach(([k,s])=>v41Set(p+s,m[k]));if(m.area_bruta_privativa){const area=document.getElementById(p+'-of-area'),n=String(m.area_bruta_privativa).replace(/\s/g,'').replace(',','.').match(/\d+(?:\.\d+)?/);if(area&&n){area.value=n[0];area.dispatchEvent(new Event('input',{bubbles:true}));}}else v41Set(p+'-of-area',m.area_total);if(m.tipologia){v41Set(p+'-im-tipologia',m.tipologia);if(!m.divisoes)v41Set(p+'-of-divisoes',String(m.tipologia).replace(/[^0-9]/g,''));}};
  function v43EnhanceVisibleForms(){
   ['cm-excl','cm-abrt'].forEach(id=>{if(document.getElementById('form-'+id))v39EnhanceOfficialCmi(id)});
+  v61EnsureRal();
   setTimeout(v43SyncCommissions,250);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',v43EnhanceVisibleForms);
