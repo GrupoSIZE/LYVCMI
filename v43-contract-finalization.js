@@ -23,7 +23,7 @@
   const pct=document.getElementById(p+'-cond-comissao')?.closest('.ff');if(pct)pct.style.display=fixed?'none':'block';
  };
  function v43SyncCommissions(){v43ToggleCommission('cmexcl');v43ToggleCommission('cmabrt')}
- function v61EnsureRal(){['cmexcl','cmabrt'].forEach(p=>{const name=document.getElementById(p+'-of-ral'),site=document.getElementById(p+'-of-ral-site');if(name&&!name.value)name.value='Centro de Informação, Mediação e Arbitragem de Consumo (CIAB)';if(site&&!site.value)site.value='https://www.ciab.pt'})}
+ function v61EnsureRal(){['cmexcl','cmabrt'].forEach(p=>{const name=document.getElementById(p+'-of-ral'),site=document.getElementById(p+'-of-ral-site'),forum=document.getElementById(p+'-of-foro');if(name&&!name.value)name.value='Centro de Informação, Mediação e Arbitragem de Consumo (CIAB)';if(site&&!site.value)site.value='https://www.ciab.pt';if(forum&&!forum.value)forum.value='Braga'})}
  window.v43SuggestWords=function(p){
   const value=Number(document.getElementById(p+'-cond-comissao-fixa')?.value)||0,out=document.getElementById(p+'-cond-comissao-fixa-extenso');
   if(out&&!out.dataset.edited)out.value=value?(v39EuroWords(value)+' euros'):'';

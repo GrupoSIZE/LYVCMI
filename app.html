@@ -5484,7 +5484,7 @@ function v39OfficialFields(prefix){return `<div class="form-card v39-official-fi
   <div class="ff"><label>% pago no contrato-promessa</label><input id="${prefix}-of-cpcv-pct" type="number" min="0" max="100" value="50"></div>
   <div class="ff"><label>Obtenção de documentos</label><select id="${prefix}-of-documentos"><option value="incluida">Incluída na remuneração</option><option value="separada">Remuneração separada</option></select></div>
   <div class="ff"><label>Valor pela obtenção (€)</label><input id="${prefix}-of-documentos-valor" type="number" min="0" step="0.01"></div>
-  <div class="ff"><label>Foro (facultativo)</label><input id="${prefix}-of-foro" placeholder="Comarca"></div>
+  <div class="ff"><label>Foro (facultativo)</label><input id="${prefix}-of-foro" value="Braga" placeholder="Comarca"></div>
   <div class="ff"><label>Centro RAL (se aderente)</label><input id="${prefix}-of-ral" value="Centro de Informação, Mediação e Arbitragem de Consumo (CIAB)"></div>
   <div class="ff full"><label>Website do Centro RAL</label><input id="${prefix}-of-ral-site" type="url" value="https://www.ciab.pt"></div>
   <div class="ff"><label>CC/BI do angariador</label><input id="${prefix}-of-ang-doc"></div>
@@ -5510,7 +5510,7 @@ function v39OfficialCmi(d,tipo){
   const registry=registryRaw.replace(/^Conservat[oó]ria do Registo Predial (?:de|da)\s+/i,'').replace(/\s+(?:sob o )?(?:registo|n\.?º).*$/i,'').trim()||registryRaw;
   const payment=v39Get(d,p+'-of-pagamento','escritura'),cpcvPct=Number(d[p+'-of-cpcv-pct'])||0,remaining=Math.max(0,100-cpcvPct);
   const payText=deposit?'☐ O total da remuneração aquando da celebração da escritura ou conclusão do negócio visado.<br><strong>OU</strong><br>☐ ____% após a celebração do contrato-promessa e o remanescente ____% na celebração da escritura ou conclusão do negócio.<br><strong>OU</strong><br>☐ O total da remuneração aquando da celebração do contrato-promessa.':payment==='cpcv-total'?'<strong>☒</strong> O total da remuneração aquando da celebração do contrato-promessa.':payment==='cpcv-parcial'?`<strong>☒</strong> ${cpcvPct}% após a celebração do contrato-promessa e o remanescente ${remaining}% na celebração da escritura ou conclusão do negócio.`:'<strong>☒</strong> O total da remuneração aquando da celebração da escritura ou conclusão do negócio visado.';
-  const docsSeparate=v39Get(d,p+'-of-documentos','incluida')==='separada',ral=v39Get(d,p+'-of-ral','Centro de Informação, Mediação e Arbitragem de Consumo (CIAB)'),ralSite=v39Get(d,p+'-of-ral-site','https://www.ciab.pt'),foro=v39Get(d,p+'-of-foro','');
+  const docsSeparate=v39Get(d,p+'-of-documentos','incluida')==='separada',ral=v39Get(d,p+'-of-ral','Centro de Informação, Mediação e Arbitragem de Consumo (CIAB)'),ralSite=v39Get(d,p+'-of-ral-site','https://www.ciab.pt'),foro=v39Get(d,p+'-of-foro','Braga');
   const prazo=v39Get(d,p+'-cond-prazo','___'),start=fmtData(d[p+'-cond-datainicio']);
   const signers=vend.length?vend:[{nome:''}],secondSignatures=signers.map((person,index)=>`<div style="margin-bottom:${index===signers.length-1?'0':'24px'};page-break-inside:avoid"><div style="height:42px"></div><div style="border-top:1.5px solid #333;padding-top:.5rem"><div class="ass-title">O Segundo Contratante${person.nome?`<br><em style="font-size:10px;font-weight:400">${v2Esc(person.nome)}</em>`:''}</div></div></div>`).join('');
   const clause=(n,title,body)=>`${docH2('Cláusula '+n+'.ª',title)}${body}`;
@@ -5627,6 +5627,6 @@ setTimeout(()=>{if(document.getElementById('form-cm-excl')?.offsetParent)v39Enha
 </script>
 <link rel="stylesheet" href="data:text/css,.v42-id-sides%7Bdisplay:grid;grid-template-columns:1fr%201fr;gap:10px;margin-top:8px%7D.v42-id-side%7Bpadding:12px;border:1px%20solid%20%23b9ddd4;border-radius:8px;background:%23fff%7D.v42-id-side%20label%7Bdisplay:block;font-weight:650;margin-bottom:7px%7D.v42-id-side%20input%7Bwidth:100%25%7D.v40-missing%7Bbackground:%23f5f5f5;color:%23777%7D%40media(max-width:680px)%7B.v42-id-sides%7Bgrid-template-columns:1fr%7D%7D">
 <script src="v42-identity-bundle.js"></script>
-<script src="v43-contract-finalization.js?v=64"></script>
+<script src="v43-contract-finalization.js?v=65"></script>
 </body>
 </html>
